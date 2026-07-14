@@ -1,0 +1,1586 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#173f35">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Vakantiekompas">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <title>Vakantiekompas</title>
+  <style>
+    :root {
+      --ink: #15211d;
+      --muted: #66736d;
+      --paper: #f4f1e9;
+      --card: #fffdf8;
+      --forest: #173f35;
+      --forest-2: #225c4b;
+      --lime: #cce875;
+      --coral: #e97255;
+      --blue: #5d8fa3;
+      --line: #dedbd1;
+      --danger: #a33b2b;
+      --shadow: 0 16px 50px rgba(23, 63, 53, .09);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 6% 4%, rgba(204, 232, 117, .24), transparent 23rem),
+        radial-gradient(circle at 100% 20%, rgba(93, 143, 163, .16), transparent 28rem),
+        var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    button, input, select, textarea { font: inherit; }
+
+    button { cursor: pointer; }
+
+    .app-shell {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 22px 0 44px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: var(--forest);
+      color: var(--lime);
+      box-shadow: var(--shadow);
+    }
+
+    .brand-mark svg { width: 23px; height: 23px; }
+    .brand-copy strong { display: block; font-size: 1rem; letter-spacing: -.02em; }
+    .brand-copy span { color: var(--muted); font-size: .78rem; }
+
+    .cloud-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      border: 0;
+      border-radius: 999px;
+      padding: 8px 11px;
+      color: var(--muted);
+      background: rgba(255,253,248,.78);
+      font-size: .72rem;
+      white-space: nowrap;
+    }
+    .cloud-status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--coral); }
+    .cloud-status.online::before { background: #58a776; }
+    .cloud-status.syncing::before { background: var(--blue); animation: pulse 1s infinite alternate; }
+    @keyframes pulse { to { opacity: .35; } }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px;
+      background: rgba(255, 253, 248, .74);
+      border: 1px solid rgba(222, 219, 209, .8);
+      border-radius: 999px;
+      backdrop-filter: blur(12px);
+    }
+
+    .nav button {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      padding: 9px 14px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .nav button.active { background: var(--forest); color: #fff; }
+
+    .panel { display: none; }
+    .panel.active { display: block; animation: rise .26s ease-out; }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(270px, .65fr);
+      gap: 28px;
+      min-height: 350px;
+      padding: clamp(28px, 5vw, 58px);
+      border-radius: 34px;
+      color: #fff;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.04), transparent 48%),
+        var(--forest);
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 340px;
+      height: 340px;
+      right: -120px;
+      top: -150px;
+      border: 72px solid rgba(204, 232, 117, .12);
+      border-radius: 50%;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 16px;
+      color: var(--lime);
+      text-transform: uppercase;
+      letter-spacing: .13em;
+      font-size: .76rem;
+      font-weight: 750;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .hero h1 {
+      max-width: 760px;
+      margin: 0;
+      font-size: clamp(2.2rem, 6vw, 5.6rem);
+      line-height: .94;
+      letter-spacing: -.065em;
+      font-weight: 760;
+    }
+
+    .hero h1 span { color: var(--lime); }
+
+    .hero-copy p {
+      max-width: 590px;
+      margin: 22px 0 26px;
+      color: rgba(255,255,255,.72);
+      font-size: clamp(.98rem, 2vw, 1.12rem);
+      line-height: 1.65;
+    }
+
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 44px;
+      padding: 10px 16px;
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      background: var(--card);
+      color: var(--ink);
+      font-weight: 700;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 8px 22px rgba(21,33,29,.1); }
+    .btn:focus-visible, .nav button:focus-visible, .icon-btn:focus-visible { outline: 3px solid rgba(93,143,163,.45); outline-offset: 2px; }
+    .btn-primary { background: var(--lime); border-color: var(--lime); color: var(--forest); }
+    .btn-dark { background: var(--forest); border-color: var(--forest); color: #fff; }
+    .btn-ghost { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.18); color: #fff; }
+    .btn-danger { color: var(--danger); }
+    .btn-small { min-height: 36px; padding: 7px 11px; font-size: .84rem; border-radius: 10px; }
+
+    .progress-orbit {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      align-self: center;
+    }
+
+    .orbit-wrap { position: relative; width: min(250px, 65vw); aspect-ratio: 1; }
+    .orbit-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .orbit-track { fill: none; stroke: rgba(255,255,255,.12); stroke-width: 12; }
+    .orbit-progress { fill: none; stroke: var(--lime); stroke-width: 12; stroke-linecap: round; transition: stroke-dashoffset .7s ease; }
+    .orbit-text { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+    .orbit-text strong { font-size: clamp(2.4rem, 6vw, 4.1rem); letter-spacing: -.055em; line-height: 1; }
+    .orbit-text span { margin-top: 7px; color: rgba(255,255,255,.62); font-size: .84rem; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin: 16px 0 34px;
+    }
+
+    .stat-card, .card {
+      background: rgba(255, 253, 248, .9);
+      border: 1px solid rgba(222, 219, 209, .82);
+      box-shadow: 0 10px 35px rgba(23,63,53,.05);
+    }
+
+    .stat-card { padding: 20px; border-radius: 20px; }
+    .stat-card .label { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .8rem; }
+    .stat-card .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--coral); }
+    .stat-card:nth-child(2) .dot { background: var(--blue); }
+    .stat-card:nth-child(3) .dot { background: var(--lime); }
+    .stat-card:nth-child(4) .dot { background: var(--forest-2); }
+    .stat-card strong { display: block; margin-top: 12px; font-size: clamp(1.45rem, 3vw, 2.15rem); letter-spacing: -.045em; }
+    .stat-card small { display: block; margin-top: 5px; color: var(--muted); line-height: 1.35; }
+
+    .section-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin: 0 0 16px;
+    }
+
+    .section-heading h2 { margin: 0; font-size: clamp(1.55rem, 3vw, 2.35rem); letter-spacing: -.045em; }
+    .section-heading p { margin: 6px 0 0; color: var(--muted); }
+
+    .chart-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(280px, .75fr); gap: 16px; }
+    .card { border-radius: var(--radius); padding: clamp(18px, 3vw, 28px); }
+    .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+    .card-head h3 { margin: 0; font-size: 1.08rem; }
+    .card-head span { color: var(--muted); font-size: .8rem; }
+
+    .chart-frame { min-height: 270px; position: relative; }
+    .chart-frame svg { width: 100%; height: 100%; min-height: 270px; overflow: visible; }
+    .chart-gridline { stroke: var(--line); stroke-width: 1; }
+    .chart-label { fill: var(--muted); font-size: 11px; }
+    .chart-line { fill: none; stroke: var(--forest); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    .chart-goal { fill: none; stroke: var(--coral); stroke-width: 2; stroke-dasharray: 6 7; }
+    .chart-area { fill: url(#weightArea); }
+    .chart-point { fill: var(--card); stroke: var(--forest); stroke-width: 3; }
+    .chart-point-latest { fill: var(--lime); stroke: var(--forest); stroke-width: 3; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 14px; color: var(--muted); font-size: .78rem; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 20px; height: 3px; border-radius: 9px; background: var(--forest); }
+    .legend .goal-line { height: 2px; background: repeating-linear-gradient(90deg, var(--coral) 0 5px, transparent 5px 9px); }
+
+    .week-bars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 9px; min-height: 235px; align-items: end; padding-top: 14px; }
+    .day-bar { min-width: 0; text-align: center; }
+    .bar-track { height: 150px; border-radius: 10px; background: #ece9df; display: flex; align-items: flex-end; overflow: hidden; position: relative; }
+    .bar-fill { width: 100%; min-height: 3px; border-radius: 10px; background: var(--blue); transition: height .45s ease; }
+    .bar-target { position: absolute; left: 0; right: 0; height: 2px; background: var(--coral); opacity: .7; }
+    .day-bar strong { display: block; margin-top: 8px; font-size: .74rem; }
+    .day-bar small { color: var(--muted); font-size: .66rem; }
+    .training-tick { display: inline-grid; place-items: center; width: 18px; height: 18px; margin: 6px auto 0; border-radius: 50%; background: var(--line); color: transparent; font-size: .68rem; }
+    .training-tick.done { background: var(--lime); color: var(--forest); }
+
+    .page-intro {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+      margin: 28px 0 24px;
+    }
+
+    .page-intro h1 { margin: 0; font-size: clamp(2rem, 5vw, 4.1rem); letter-spacing: -.06em; line-height: 1; }
+    .page-intro p { margin: 10px 0 0; color: var(--muted); max-width: 620px; }
+
+    .form-layout { display: grid; grid-template-columns: minmax(300px, .7fr) minmax(0, 1.3fr); gap: 16px; align-items: start; }
+    .sticky-card { position: sticky; top: 18px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 7px; }
+    .field.full { grid-column: 1 / -1; }
+    .field label { color: var(--muted); font-size: .8rem; font-weight: 700; }
+    .field input, .field select, .field textarea {
+      width: 100%;
+      min-height: 45px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fffefa;
+      color: var(--ink);
+      padding: 10px 12px;
+      outline: none;
+    }
+
+    .field textarea { min-height: 90px; resize: vertical; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(93,143,163,.16); }
+    .form-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
+
+    .entries { display: flex; flex-direction: column; gap: 10px; }
+    .entry-row {
+      display: grid;
+      grid-template-columns: 110px minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      padding: 15px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .entry-row:last-child { border-bottom: 0; }
+    .entry-date { color: var(--muted); font-size: .8rem; }
+    .entry-main strong { display: block; margin-bottom: 4px; }
+    .entry-main span { color: var(--muted); font-size: .8rem; line-height: 1.45; }
+    .entry-actions { display: flex; gap: 6px; }
+    .icon-btn { border: 0; background: transparent; color: var(--muted); padding: 6px; border-radius: 8px; }
+    .icon-btn:hover { background: #ece9df; color: var(--ink); }
+    .icon-btn.delete:hover { color: var(--danger); }
+
+    .empty-state { padding: 34px 12px; text-align: center; color: var(--muted); }
+    .subnav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .subnav button { border: 1px solid var(--line); border-radius: 999px; padding: 9px 13px; background: transparent; color: var(--muted); }
+    .subnav button.active { background: var(--forest); border-color: var(--forest); color: #fff; }
+
+    .measurement-layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr); gap: 16px; margin-bottom: 16px; }
+    .mini-table { width: 100%; border-collapse: collapse; }
+    .mini-table th, .mini-table td { padding: 12px 8px; border-bottom: 1px solid var(--line); text-align: left; font-size: .86rem; }
+    .mini-table th { color: var(--muted); font-size: .74rem; text-transform: uppercase; letter-spacing: .08em; }
+    .mini-table tr:last-child td { border-bottom: 0; }
+
+    .nutrition-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 16px;
+      padding: 13px 16px;
+      border: 1px solid rgba(222, 219, 209, .82);
+      border-radius: 18px;
+      background: rgba(255, 253, 248, .78);
+    }
+    .nutrition-toolbar strong { font-size: .9rem; }
+    .nutrition-toolbar input { min-height: 40px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 11px; background: var(--card); color: var(--ink); }
+    .macro-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .macro-card { padding: 18px; border-radius: 19px; background: rgba(255,253,248,.9); border: 1px solid rgba(222,219,209,.82); }
+    .macro-card .macro-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: .76rem; }
+    .macro-card .macro-label i { width: 9px; height: 9px; border-radius: 50%; background: var(--coral); }
+    .macro-card:nth-child(2) .macro-label i { background: var(--blue); }
+    .macro-card:nth-child(3) .macro-label i { background: var(--forest-2); }
+    .macro-card:nth-child(4) .macro-label i { background: var(--lime); }
+    .macro-card strong { display: block; margin: 10px 0 9px; font-size: clamp(1.3rem, 3vw, 1.9rem); letter-spacing: -.04em; }
+    .macro-card small { display: block; min-height: 1.1em; color: var(--muted); font-size: .72rem; }
+    .macro-track { height: 7px; margin-top: 12px; overflow: hidden; border-radius: 999px; background: #e9e5dc; }
+    .macro-fill { height: 100%; width: 0; border-radius: inherit; background: var(--coral); transition: width .35s ease; }
+    .macro-card:nth-child(2) .macro-fill { background: var(--blue); }
+    .macro-card:nth-child(3) .macro-fill { background: var(--forest-2); }
+    .macro-card:nth-child(4) .macro-fill { background: var(--lime); }
+    .nutrition-day-title { display: flex; align-items: center; gap: 9px; }
+    .keto-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 4px 9px; border-radius: 999px; color: var(--forest); background: rgba(204,232,117,.28); font-size: .68rem; font-weight: 750; }
+
+    .settings-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(270px, .55fr); gap: 16px; }
+    .data-actions { display: flex; flex-direction: column; gap: 10px; }
+    .data-actions .btn { width: 100%; }
+    .fineprint { color: var(--muted); font-size: .76rem; line-height: 1.55; }
+    .privacy-note { display: flex; gap: 10px; align-items: flex-start; margin-top: 16px; padding: 14px; border-radius: 14px; background: rgba(204,232,117,.2); color: var(--forest); font-size: .8rem; line-height: 1.5; }
+
+    .toast {
+      position: fixed;
+      z-index: 20;
+      left: 50%;
+      bottom: max(22px, env(safe-area-inset-bottom));
+      transform: translate(-50%, 20px);
+      opacity: 0;
+      pointer-events: none;
+      padding: 11px 16px;
+      border-radius: 999px;
+      color: #fff;
+      background: var(--forest);
+      box-shadow: var(--shadow);
+      transition: .25s ease;
+      font-size: .86rem;
+    }
+
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    dialog {
+      width: min(460px, calc(100% - 24px));
+      border: 0;
+      border-radius: 24px;
+      padding: 0;
+      color: var(--ink);
+      background: var(--card);
+      box-shadow: 0 24px 80px rgba(21,33,29,.28);
+    }
+    dialog::backdrop { background: rgba(16,28,24,.62); backdrop-filter: blur(5px); }
+    .auth-dialog { padding: 28px; }
+    .auth-dialog h2 { margin: 0 0 8px; font-size: 1.65rem; letter-spacing: -.04em; }
+    .auth-dialog > p { margin: 0 0 20px; color: var(--muted); line-height: 1.55; }
+    .auth-close { position: absolute; top: 13px; right: 13px; }
+    .auth-user { padding: 14px; margin-bottom: 14px; border-radius: 14px; background: rgba(204,232,117,.2); color: var(--forest); font-size: .82rem; }
+
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; }
+      .progress-orbit { position: absolute; right: -20px; bottom: -30px; opacity: .24; }
+      .orbit-wrap { width: 250px; }
+      .orbit-text { display: none; }
+      .hero-copy { position: relative; z-index: 2; }
+      .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .chart-grid, .measurement-layout, .settings-grid { grid-template-columns: 1fr; }
+      .macro-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .form-layout { grid-template-columns: 1fr; }
+      .sticky-card { position: static; }
+    }
+
+    @media (max-width: 680px) {
+      .app-shell { width: min(100% - 20px, 1180px); padding-top: 12px; padding-bottom: 104px; }
+      .topbar { margin-bottom: 16px; }
+      .brand-copy span { display: none; }
+      .cloud-status { padding: 8px; }
+      .cloud-status span { display: none; }
+      .nav {
+        position: fixed;
+        z-index: 15;
+        left: 10px;
+        right: 10px;
+        bottom: max(10px, env(safe-area-inset-bottom));
+        justify-content: space-around;
+        border-radius: 18px;
+        box-shadow: 0 12px 40px rgba(21,33,29,.22);
+      }
+      .nav button { flex: 1; padding: 11px 6px; font-size: .72rem; }
+      .topbar > .btn { display: none; }
+      .hero { min-height: 470px; padding: 28px 23px; border-radius: 28px; }
+      .hero h1 { font-size: clamp(2.65rem, 15vw, 4.3rem); }
+      .hero-actions .btn { width: 100%; }
+      .progress-orbit { right: -38px; bottom: -65px; opacity: .28; }
+      .orbit-wrap { width: 285px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; gap: 9px; }
+      .stat-card { padding: 15px; border-radius: 17px; }
+      .stat-card strong { font-size: 1.45rem; }
+      .stat-card small { font-size: .7rem; }
+      .macro-grid { gap: 8px; }
+      .macro-card { padding: 14px; border-radius: 16px; }
+      .macro-card strong { font-size: 1.35rem; }
+      .nutrition-toolbar { align-items: flex-start; flex-direction: column; }
+      .nutrition-toolbar input { width: 100%; }
+      .card { border-radius: 19px; }
+      .section-heading, .page-intro { align-items: flex-start; flex-direction: column; }
+      .page-intro .btn { width: 100%; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field.full { grid-column: auto; }
+      .entry-row { grid-template-columns: 1fr auto; gap: 7px 10px; }
+      .entry-date { grid-column: 1 / -1; }
+      .entry-actions { grid-column: 2; grid-row: 2; }
+      .chart-frame, .chart-frame svg { min-height: 230px; }
+      .week-bars { gap: 5px; }
+      .bar-track { height: 125px; }
+      .mini-table thead { display: none; }
+      .mini-table, .mini-table tbody, .mini-table tr, .mini-table td { display: block; width: 100%; }
+      .mini-table tr { padding: 12px 0; border-bottom: 1px solid var(--line); }
+      .mini-table td { display: flex; justify-content: space-between; gap: 14px; padding: 5px 0; border: 0; }
+      .mini-table td::before { content: attr(data-label); color: var(--muted); }
+      .toast { bottom: 86px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/><path d="m15.7 8.3-2.1 5.3-5.3 2.1 2.1-5.3 5.3-2.1Z" fill="currentColor"/></svg>
+        </div>
+        <div class="brand-copy"><strong>Vakantiekompas</strong><span>Persoonlijke voortgang</span></div>
+      </div>
+      <button type="button" class="cloud-status" id="cloud-status"><span>Niet ingelogd</span></button>
+      <nav class="nav" aria-label="Hoofdnavigatie">
+        <button type="button" class="active" data-panel-target="overview">Overzicht</button>
+        <button type="button" data-panel-target="body">Lichaam</button>
+        <button type="button" data-panel-target="training">Training</button>
+        <button type="button" data-panel-target="nutrition">Voeding</button>
+        <button type="button" data-panel-target="settings">Instellingen</button>
+      </nav>
+      <button type="button" class="btn btn-dark" data-quick-log>+ Vandaag bijwerken</button>
+    </header>
+
+    <section class="panel active" id="panel-overview" aria-labelledby="overview-title">
+      <div class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow" id="hero-status">Op koers</p>
+          <h1 id="overview-title">Nog <span id="hero-remaining">4,0 kg</span> tot vakantie.</h1>
+          <p id="hero-message">Je bouwt gestaag aan je doel. Registreer je gewicht en gewoontes; de rest rekent het kompas voor je uit.</p>
+          <div class="hero-actions">
+            <button type="button" class="btn btn-primary" data-quick-log>Log vandaag</button>
+            <button type="button" class="btn btn-ghost" data-panel-link="body">Bekijk metingen</button>
+          </div>
+        </div>
+        <div class="progress-orbit" aria-label="Voortgang naar streefgewicht">
+          <div class="orbit-wrap">
+            <svg viewBox="0 0 220 220" role="img" aria-hidden="true">
+              <circle class="orbit-track" cx="110" cy="110" r="91"></circle>
+              <circle class="orbit-progress" id="orbit-progress" cx="110" cy="110" r="91"></circle>
+            </svg>
+            <div class="orbit-text"><strong id="orbit-percent">54%</strong><span>van je doel</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-grid" aria-label="Kerncijfers">
+        <article class="stat-card"><div class="label"><i class="dot"></i>Laatste gewicht</div><strong id="stat-weight">80,0 kg</strong><small id="stat-weight-date">nog geen weging</small></article>
+        <article class="stat-card"><div class="label"><i class="dot"></i>Resultaat</div><strong id="stat-lost">0,0 kg</strong><small id="stat-lost-context">vanaf vandaag</small></article>
+        <article class="stat-card"><div class="label"><i class="dot"></i>Nog te gaan</div><strong id="stat-days">42 dagen</strong><small id="stat-pace">stel je doel in</small></article>
+        <article class="stat-card"><div class="label"><i class="dot"></i>Deze week</div><strong id="stat-training">0 / 4</strong><small id="stat-protein">nog geen eiwit gelogd</small></article>
+      </div>
+
+      <div class="section-heading">
+        <div><h2 id="target-line-title">De lijn naar je doeldatum</h2><p>Werkelijke wegingen tegenover een gelijkmatig doelschema.</p></div>
+      </div>
+      <div class="chart-grid">
+        <article class="card">
+          <div class="card-head">
+            <h3>Gewichtsverloop</h3>
+            <div class="legend"><span><i></i>Werkelijk</span><span><i class="goal-line"></i>Doellijn</span></div>
+          </div>
+          <div class="chart-frame" id="weight-chart" aria-label="Lijngrafiek van gewichtsverloop"></div>
+        </article>
+        <article class="card">
+          <div class="card-head"><h3>Laatste 7 dagen</h3><span>Eiwit + training</span></div>
+          <div class="week-bars" id="week-bars" aria-label="Eiwitinname en trainingsdagen over de laatste zeven dagen"></div>
+          <div class="legend"><span><i style="background:var(--blue)"></i>Eiwit</span><span><i style="background:var(--lime);height:8px;width:8px;border-radius:50%"></i>Training</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-body" aria-labelledby="body-title">
+      <div class="page-intro">
+        <div><h1 id="body-title">Gewicht & omtrek</h1><p>Dagelijks wegen, wekelijks meten. Zo zie je ook vooruitgang wanneer de weegschaal even stilstaat.</p></div>
+        <button type="button" class="btn btn-dark" data-focus-form="daily-date">+ Nieuwe meting</button>
+      </div>
+
+      <div class="subnav" aria-label="Type lichaamsmeting">
+        <button type="button" class="active" data-body-view="daily">Gewicht & eiwit</button>
+        <button type="button" data-body-view="measurements">Omtrek</button>
+      </div>
+
+      <div id="body-view-daily">
+        <div class="form-layout">
+          <article class="card sticky-card">
+            <div class="card-head"><h3 id="daily-form-title">Dag bijwerken</h3><span>Gewicht + eiwit</span></div>
+            <form id="daily-form">
+              <input type="hidden" id="daily-id">
+              <div class="form-grid">
+                <div class="field full"><label for="daily-date">Datum</label><input id="daily-date" type="date" required></div>
+                <div class="field"><label for="daily-weight">Gewicht (kg)</label><input id="daily-weight" type="number" inputmode="decimal" min="40" max="200" step="0.05" placeholder="80,0"></div>
+                <div class="field"><label for="daily-protein">Eiwit (gram)</label><input id="daily-protein" type="number" inputmode="numeric" min="0" max="400" step="1" placeholder="140"></div>
+                <div class="field full"><label for="daily-note">Notitie (optioneel)</label><textarea id="daily-note" placeholder="Energie, herstel of bijzonderheden…"></textarea></div>
+              </div>
+              <div class="form-actions"><button class="btn btn-dark" type="submit">Opslaan</button><button class="btn" id="daily-cancel" type="button" hidden>Annuleren</button></div>
+            </form>
+          </article>
+          <article class="card">
+            <div class="card-head"><h3>Recente dagen</h3><span id="daily-count">0 registraties</span></div>
+            <div class="entries" id="daily-entries"></div>
+          </article>
+        </div>
+      </div>
+
+      <div id="body-view-measurements" hidden>
+        <div class="measurement-layout">
+          <article class="card">
+            <div class="card-head">
+              <h3>Omtrektrend</h3>
+              <select id="measurement-metric" aria-label="Kies meetpunt">
+                <option value="waist">Taille (navel)</option>
+                <option value="narrowWaist">Smalste taille</option>
+                <option value="hips">Heupen</option>
+                <option value="chest">Borst</option>
+                <option value="upperArm">Bovenarm</option>
+                <option value="thigh">Bovenbeen</option>
+              </select>
+            </div>
+            <div class="chart-frame" id="measurement-chart" aria-label="Lijngrafiek van lichaamsomtrek"></div>
+          </article>
+          <article class="card">
+            <div class="card-head"><h3 id="measurement-form-title">Weekmeting</h3><span>centimeters</span></div>
+            <form id="measurement-form">
+              <input type="hidden" id="measurement-id">
+              <div class="form-grid">
+                <div class="field full"><label for="measurement-date">Datum</label><input id="measurement-date" type="date" required></div>
+                <div class="field"><label for="measurement-waist">Taille (navel)</label><input id="measurement-waist" type="number" inputmode="decimal" min="40" max="200" step="0.1"></div>
+                <div class="field"><label for="measurement-narrow-waist">Smalste taille</label><input id="measurement-narrow-waist" type="number" inputmode="decimal" min="40" max="200" step="0.1"></div>
+                <div class="field"><label for="measurement-hips">Heupen</label><input id="measurement-hips" type="number" inputmode="decimal" min="40" max="200" step="0.1"></div>
+                <div class="field"><label for="measurement-chest">Borst</label><input id="measurement-chest" type="number" inputmode="decimal" min="40" max="200" step="0.1"></div>
+                <div class="field"><label for="measurement-arm">Bovenarm</label><input id="measurement-arm" type="number" inputmode="decimal" min="15" max="80" step="0.1"></div>
+                <div class="field"><label for="measurement-thigh">Bovenbeen</label><input id="measurement-thigh" type="number" inputmode="decimal" min="25" max="120" step="0.1"></div>
+              </div>
+              <div class="form-actions"><button class="btn btn-dark" type="submit">Opslaan</button><button class="btn" id="measurement-cancel" type="button" hidden>Annuleren</button></div>
+            </form>
+          </article>
+        </div>
+        <article class="card">
+          <div class="card-head"><h3>Meetoverzicht</h3><span id="measurement-count">0 metingen</span></div>
+          <div style="overflow-x:auto"><table class="mini-table"><thead><tr><th>Datum</th><th>Taille</th><th>Smalste</th><th>Heupen</th><th>Borst</th><th>Arm</th><th>Been</th><th></th></tr></thead><tbody id="measurement-entries"></tbody></table></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-training" aria-labelledby="training-title">
+      <div class="page-intro">
+        <div><h1 id="training-title">Training</h1><p>Leg je sessies kort vast. Het weekdoel telt automatisch mee in je overzicht.</p></div>
+        <button type="button" class="btn btn-dark" data-focus-form="training-date">+ Training toevoegen</button>
+      </div>
+      <div class="form-layout">
+        <article class="card sticky-card">
+          <div class="card-head"><h3 id="training-form-title">Nieuwe training</h3><span>Sessie</span></div>
+          <form id="training-form">
+            <input type="hidden" id="training-id">
+            <div class="form-grid">
+              <div class="field full"><label for="training-date">Datum</label><input id="training-date" type="date" required></div>
+              <div class="field"><label for="training-type">Type</label><select id="training-type" required><option>Push</option><option>Pull</option><option>Benen</option><option>Full body</option><option>Hardlopen</option><option>Overig</option></select></div>
+              <div class="field"><label for="training-duration">Duur (minuten)</label><input id="training-duration" type="number" inputmode="numeric" min="1" max="300" step="1" placeholder="50"></div>
+              <div class="field full"><label for="training-rpe">Zwaarte / RPE (1–10)</label><input id="training-rpe" type="range" min="1" max="10" step="1" value="7"><div class="fineprint">Gekozen: <strong id="training-rpe-output">7</strong></div></div>
+              <div class="field full"><label for="training-note">Notities (optioneel)</label><textarea id="training-note" placeholder="Belangrijkste oefeningen, gewichten of hoe het ging…"></textarea></div>
+            </div>
+            <div class="form-actions"><button class="btn btn-dark" type="submit">Opslaan</button><button class="btn" id="training-cancel" type="button" hidden>Annuleren</button></div>
+          </form>
+        </article>
+        <article class="card">
+          <div class="card-head"><h3>Trainingslog</h3><span id="training-count">0 sessies</span></div>
+          <div class="entries" id="training-entries"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-nutrition" aria-labelledby="nutrition-title">
+      <div class="page-intro">
+        <div><h1 id="nutrition-title">Voeding</h1><p>Registreer je maaltijden en houd calorieën en macro's scherp zonder je keto-routine ingewikkeld te maken.</p></div>
+        <button type="button" class="btn btn-dark" data-focus-form="nutrition-name">+ Maaltijd toevoegen</button>
+      </div>
+
+      <div class="nutrition-toolbar">
+        <strong>Dagoverzicht</strong>
+        <label class="field" style="gap:5px"><span class="sr-only">Kies datum</span><input id="nutrition-day" type="date"></label>
+      </div>
+
+      <div class="macro-grid" aria-label="Voedingswaarden van de geselecteerde dag">
+        <article class="macro-card"><div class="macro-label"><span>Calorieën</span><i></i></div><strong id="nutrition-calories">0 kcal</strong><small id="nutrition-calories-note">van 1.900 kcal</small><div class="macro-track"><div class="macro-fill" id="nutrition-calories-bar"></div></div></article>
+        <article class="macro-card"><div class="macro-label"><span>Eiwit</span><i></i></div><strong id="nutrition-protein">0 g</strong><small id="nutrition-protein-note">doel 130–150 g</small><div class="macro-track"><div class="macro-fill" id="nutrition-protein-bar"></div></div></article>
+        <article class="macro-card"><div class="macro-label"><span>Vet</span><i></i></div><strong id="nutrition-fat">0 g</strong><small id="nutrition-fat-note">0% van je energie</small><div class="macro-track"><div class="macro-fill" id="nutrition-fat-bar"></div></div></article>
+        <article class="macro-card"><div class="macro-label"><span>Koolhydraten</span><i></i></div><strong id="nutrition-carbs">0 g</strong><small id="nutrition-carbs-note">maximaal 30 g</small><div class="macro-track"><div class="macro-fill" id="nutrition-carbs-bar"></div></div></article>
+      </div>
+
+      <div class="form-layout">
+        <article class="card sticky-card">
+          <div class="card-head"><h3 id="nutrition-form-title">Maaltijd toevoegen</h3><span>Macro's</span></div>
+          <form id="nutrition-form">
+            <input type="hidden" id="nutrition-id">
+            <div class="form-grid">
+              <div class="field"><label for="nutrition-date">Datum</label><input id="nutrition-date" type="date" required></div>
+              <div class="field"><label for="nutrition-meal">Moment</label><select id="nutrition-meal" required><option>Maaltijd 1</option><option>Maaltijd 2</option><option>Snack</option><option>Overig</option></select></div>
+              <div class="field full"><label for="nutrition-name">Gerecht of maaltijd</label><input id="nutrition-name" type="text" maxlength="120" required placeholder="Bijv. entrecote, eieren en avocado"></div>
+              <div class="field"><label for="nutrition-calories-input">Calorieën (kcal)</label><input id="nutrition-calories-input" type="number" inputmode="numeric" min="0" max="10000" step="1" placeholder="850"></div>
+              <div class="field"><label for="nutrition-protein-input">Eiwit (g)</label><input id="nutrition-protein-input" type="number" inputmode="decimal" min="0" max="500" step="0.1" placeholder="70"></div>
+              <div class="field"><label for="nutrition-fat-input">Vet (g)</label><input id="nutrition-fat-input" type="number" inputmode="decimal" min="0" max="500" step="0.1" placeholder="55"></div>
+              <div class="field"><label for="nutrition-carbs-input">Koolhydraten (g)</label><input id="nutrition-carbs-input" type="number" inputmode="decimal" min="0" max="500" step="0.1" placeholder="8"></div>
+              <div class="field full"><label for="nutrition-note">Notitie (optioneel)</label><textarea id="nutrition-note" placeholder="Ingrediënten, porties of bijzonderheden…"></textarea></div>
+            </div>
+            <div class="form-actions"><button class="btn btn-dark" type="submit">Opslaan</button><button class="btn" id="nutrition-cancel" type="button" hidden>Annuleren</button></div>
+          </form>
+        </article>
+        <article class="card">
+          <div class="card-head"><div class="nutrition-day-title"><h3>Maaltijden</h3><span class="keto-badge" id="nutrition-keto-badge">Nog niets gelogd</span></div><span id="nutrition-count">0 items</span></div>
+          <div class="entries" id="nutrition-entries"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-settings" aria-labelledby="settings-title">
+      <div class="page-intro"><div><h1 id="settings-title">Doelen & gegevens</h1><p>Pas je vakantiepunt en richtlijnen aan. Alle berekeningen worden direct bijgewerkt.</p></div></div>
+      <div class="settings-grid">
+        <article class="card">
+          <div class="card-head"><h3>Jouw doel</h3><span>Instellingen</span></div>
+          <form id="settings-form">
+            <div class="form-grid">
+              <div class="field"><label for="settings-name">Naam</label><input id="settings-name" type="text" maxlength="60"></div>
+              <div class="field"><label for="settings-target-date">Vakantiedatum</label><input id="settings-target-date" type="date" required></div>
+              <div class="field"><label for="settings-start-date">Startdatum</label><input id="settings-start-date" type="date" required></div>
+              <div class="field"><label for="settings-start-weight">Startgewicht (kg)</label><input id="settings-start-weight" type="number" min="40" max="200" step="0.05" required></div>
+              <div class="field"><label for="settings-target-weight">Streefgewicht (kg)</label><input id="settings-target-weight" type="number" min="40" max="200" step="0.05" required></div>
+              <div class="field"><label for="settings-training-goal">Trainingen per week</label><input id="settings-training-goal" type="number" min="1" max="14" step="1" required></div>
+              <div class="field"><label for="settings-protein-min">Eiwit minimum (g)</label><input id="settings-protein-min" type="number" min="0" max="400" step="1" required></div>
+              <div class="field"><label for="settings-protein-max">Eiwit maximum (g)</label><input id="settings-protein-max" type="number" min="0" max="400" step="1" required></div>
+              <div class="field"><label for="settings-calorie-target">Caloriedoel (kcal)</label><input id="settings-calorie-target" type="number" min="500" max="6000" step="50" required></div>
+              <div class="field"><label for="settings-carb-max">Koolhydraten maximum (g)</label><input id="settings-carb-max" type="number" min="0" max="500" step="1" required></div>
+            </div>
+            <div class="form-actions"><button class="btn btn-dark" type="submit">Doelen opslaan</button></div>
+          </form>
+        </article>
+        <article class="card">
+          <div class="card-head"><h3>Back-up</h3><span>Lokaal</span></div>
+          <div class="data-actions">
+            <button class="btn" id="export-data" type="button">Gegevens exporteren</button>
+            <label class="btn" for="import-data">Back-up importeren</label>
+            <input class="sr-only" id="import-data" type="file" accept="application/json,.json">
+            <button class="btn btn-danger" id="reset-data" type="button">Alles wissen</button>
+          </div>
+          <div class="privacy-note"><span aria-hidden="true">◉</span><span>Je gegevens blijven in deze browser op dit apparaat. Exporteer af en toe een back-up als JSON-bestand.</span></div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="auth-dialog" aria-labelledby="auth-title">
+    <div class="auth-dialog">
+      <button class="icon-btn auth-close" id="auth-close" type="button" aria-label="Sluiten">×</button>
+      <h2 id="auth-title">Veilig synchroniseren</h2>
+      <p id="auth-copy">Vul je e-mailadres in. Je ontvangt een beveiligde inloglink; een wachtwoord is niet nodig.</p>
+      <div id="auth-signed-out">
+        <form id="auth-form">
+          <div class="field"><label for="auth-email">E-mailadres</label><input id="auth-email" type="email" autocomplete="email" required placeholder="jij@voorbeeld.nl"></div>
+          <div class="form-actions"><button class="btn btn-dark" type="submit">Stuur inloglink</button></div>
+        </form>
+      </div>
+      <div id="auth-signed-in" hidden>
+        <div class="auth-user" id="auth-user-email"></div>
+        <div class="form-actions"><button class="btn btn-dark" id="sync-now" type="button">Nu synchroniseren</button><button class="btn" id="auth-logout" type="button">Uitloggen</button></div>
+      </div>
+      <p class="fineprint" id="auth-message" aria-live="polite" style="margin-top:16px"></p>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="./config.js"></script>
+  <script>
+    (() => {
+      "use strict";
+
+      const STORAGE_KEY = "vakantiekompas-v1";
+      const UPDATED_KEY = "vakantiekompas-updated-at";
+      const todayISO = () => {
+        const now = new Date();
+        const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+        return local.toISOString().slice(0, 10);
+      };
+      const daysFromTodayISO = days => {
+        const date = new Date();
+        date.setDate(date.getDate() + days);
+        const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+        return local.toISOString().slice(0, 10);
+      };
+
+      const seed = {
+        config: {
+          name: "",
+          startDate: todayISO(),
+          startWeight: 80,
+          targetDate: daysFromTodayISO(42),
+          targetWeight: 75,
+          proteinMin: 130,
+          proteinMax: 150,
+          calorieTarget: 1900,
+          carbMax: 30,
+          weeklyTrainingGoal: 4
+        },
+        daily: [],
+        measurements: [],
+        trainings: [],
+        nutrition: []
+      };
+
+      let state = loadState();
+      let toastTimer;
+      let supabaseClient = null;
+      let currentUser = null;
+      let syncTimer = null;
+      let remoteApplying = false;
+      const CLOUD_CONFIG = window.VAKANTIEKOMPAS_CONFIG || {};
+
+      function clone(value) { return JSON.parse(JSON.stringify(value)); }
+
+      function normalizeState(candidate) {
+        if (!candidate || !candidate.config || !Array.isArray(candidate.daily) || !Array.isArray(candidate.measurements) || !Array.isArray(candidate.trainings)) return null;
+        candidate.nutrition = Array.isArray(candidate.nutrition) ? candidate.nutrition : [];
+        candidate.config.calorieTarget = candidate.config.calorieTarget ?? 1900;
+        candidate.config.carbMax = candidate.config.carbMax ?? 30;
+        candidate.config.proteinMin = candidate.config.proteinMin ?? 130;
+        candidate.config.proteinMax = candidate.config.proteinMax ?? 150;
+        candidate.config.weeklyTrainingGoal = candidate.config.weeklyTrainingGoal ?? 4;
+        return candidate;
+      }
+
+      function loadState() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+          const normalized = normalizeState(saved);
+          if (normalized) return normalized;
+        } catch (error) {
+          console.warn("Opgeslagen gegevens konden niet worden gelezen.", error);
+        }
+        return clone(seed);
+      }
+
+      function saveState(message) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        if (!remoteApplying) localStorage.setItem(UPDATED_KEY, new Date().toISOString());
+        renderAll();
+        if (!remoteApplying) scheduleCloudSync();
+        if (message) showToast(message);
+      }
+
+      function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.textContent = message;
+        toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 2200);
+      }
+
+      function cloudConfigured() {
+        return Boolean(CLOUD_CONFIG.supabaseUrl && CLOUD_CONFIG.supabaseAnonKey && !CLOUD_CONFIG.supabaseUrl.includes("JOUW-"));
+      }
+
+      function setCloudStatus(label, mode = "") {
+        const button = document.getElementById("cloud-status");
+        button.classList.remove("online", "syncing");
+        if (mode) button.classList.add(mode);
+        button.querySelector("span").textContent = label;
+      }
+
+      function updateAuthView() {
+        document.getElementById("auth-signed-out").hidden = Boolean(currentUser);
+        document.getElementById("auth-signed-in").hidden = !currentUser;
+        document.getElementById("auth-user-email").textContent = currentUser ? "Ingelogd als " + currentUser.email : "";
+      }
+
+      async function initializeCloud() {
+        if (!cloudConfigured()) {
+          setCloudStatus("Alleen lokaal");
+          document.getElementById("auth-message").textContent = "De beveiligde database moet nog worden gekoppeld.";
+          return;
+        }
+        try {
+          setCloudStatus("Verbinden…", "syncing");
+          const sdkUrl = CLOUD_CONFIG.sdkUrl || "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+          const { createClient } = await import(sdkUrl);
+          supabaseClient = createClient(CLOUD_CONFIG.supabaseUrl, CLOUD_CONFIG.supabaseAnonKey, {
+            auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+          });
+          const { data } = await supabaseClient.auth.getSession();
+          await handleSession(data.session);
+          supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (event === "INITIAL_SESSION") return;
+            setTimeout(() => handleSession(session), 0);
+          });
+        } catch (error) {
+          console.error(error);
+          setCloudStatus("Verbinding mislukt");
+          document.getElementById("auth-message").textContent = "De synchronisatie kon niet worden gestart. Controleer de cloudinstellingen.";
+        }
+      }
+
+      async function handleSession(session) {
+        currentUser = session ? session.user : null;
+        updateAuthView();
+        if (!currentUser) {
+          setCloudStatus("Niet ingelogd");
+          return;
+        }
+        setCloudStatus("Synchroniseren…", "syncing");
+        await reconcileRemoteState();
+      }
+
+      function scheduleCloudSync() {
+        if (!supabaseClient || !currentUser) return;
+        clearTimeout(syncTimer);
+        setCloudStatus("Wijzigingen…", "syncing");
+        syncTimer = setTimeout(pushRemoteState, 650);
+      }
+
+      async function pushRemoteState() {
+        if (!supabaseClient || !currentUser) return;
+        clearTimeout(syncTimer);
+        const updatedAt = localStorage.getItem(UPDATED_KEY) || new Date().toISOString();
+        setCloudStatus("Synchroniseren…", "syncing");
+        const { error } = await supabaseClient.from("user_state").upsert({
+          user_id: currentUser.id,
+          data: state,
+          updated_at: updatedAt
+        }, { onConflict: "user_id" });
+        if (error) {
+          console.error(error);
+          setCloudStatus("Offline wijzigingen");
+          return;
+        }
+        setCloudStatus("Gesynchroniseerd", "online");
+      }
+
+      async function reconcileRemoteState() {
+        if (!supabaseClient || !currentUser) return;
+        const { data, error } = await supabaseClient.from("user_state").select("data, updated_at").eq("user_id", currentUser.id).maybeSingle();
+        if (error) {
+          console.error(error);
+          setCloudStatus("Synchronisatie mislukt");
+          return;
+        }
+        if (!data) {
+          await pushRemoteState();
+          return;
+        }
+        const localUpdated = Date.parse(localStorage.getItem(UPDATED_KEY) || "1970-01-01T00:00:00Z");
+        const remoteUpdated = Date.parse(data.updated_at || "1970-01-01T00:00:00Z");
+        if (localUpdated > remoteUpdated) {
+          await pushRemoteState();
+          return;
+        }
+        const normalized = normalizeState(data.data);
+        if (!normalized) {
+          setCloudStatus("Ongeldige cloudgegevens");
+          return;
+        }
+        remoteApplying = true;
+        state = normalized;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        localStorage.setItem(UPDATED_KEY, data.updated_at || new Date().toISOString());
+        renderAll();
+        remoteApplying = false;
+        setCloudStatus("Gesynchroniseerd", "online");
+      }
+
+      function id(prefix) { return prefix + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+      function parseDate(iso) { return new Date(iso + "T12:00:00"); }
+      function diffDays(a, b) { return Math.ceil((parseDate(b) - parseDate(a)) / 86400000); }
+      function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
+      function number(value) {
+        if (value === "" || value == null) return null;
+        const n = Number(value);
+        return Number.isFinite(n) ? n : null;
+      }
+      function formatNumber(value, digits = 1) { return Number(value).toLocaleString("nl-NL", { minimumFractionDigits: digits, maximumFractionDigits: digits }); }
+      function formatWeight(value) { return Number(value).toLocaleString("nl-NL", { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + " kg"; }
+      function formatDate(iso, short = false) { return parseDate(iso).toLocaleDateString("nl-NL", short ? { day: "numeric", month: "short" } : { weekday: "short", day: "numeric", month: "short" }); }
+      function escapeHTML(value) { return String(value ?? "").replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char])); }
+      function sortByDate(items) { return [...items].sort((a, b) => a.date.localeCompare(b.date)); }
+      function latestWeightEntry() { return sortByDate(state.daily.filter(item => item.weight != null)).at(-1) || null; }
+      function nutritionTotals(date) {
+        return state.nutrition.filter(item => item.date === date).reduce((totals, item) => {
+          totals.calories += item.calories || 0;
+          totals.protein += item.protein || 0;
+          totals.fat += item.fat || 0;
+          totals.carbs += item.carbs || 0;
+          totals.count += 1;
+          return totals;
+        }, { calories: 0, protein: 0, fat: 0, carbs: 0, count: 0 });
+      }
+      function proteinForDate(date) {
+        const food = nutritionTotals(date);
+        if (food.count) return food.protein;
+        const day = state.daily.find(item => item.date === date);
+        return day && day.protein != null ? day.protein : null;
+      }
+
+      function getMonday(iso) {
+        const d = parseDate(iso);
+        const day = (d.getDay() + 6) % 7;
+        d.setDate(d.getDate() - day);
+        return d.toISOString().slice(0, 10);
+      }
+
+      function setPanel(name) {
+        document.querySelectorAll(".panel").forEach(panel => panel.classList.toggle("active", panel.id === "panel-" + name));
+        document.querySelectorAll("[data-panel-target]").forEach(button => button.classList.toggle("active", button.dataset.panelTarget === name));
+        if (name === "body" && !document.getElementById("body-view-measurements").hidden) renderMeasurementChart();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      function renderAll() {
+        renderSummary();
+        renderWeightChart();
+        renderWeekBars();
+        renderDailyEntries();
+        renderMeasurementEntries();
+        renderMeasurementChart();
+        renderTrainingEntries();
+        renderNutrition();
+        renderSettings();
+      }
+
+      function renderSummary() {
+        const latest = latestWeightEntry();
+        const cfg = state.config;
+        const current = latest ? latest.weight : cfg.startWeight;
+        const totalNeeded = cfg.startWeight - cfg.targetWeight;
+        const lost = cfg.startWeight - current;
+        const progress = totalNeeded > 0 ? clamp(lost / totalNeeded, 0, 1) : 0;
+        const remaining = Math.max(0, current - cfg.targetWeight);
+        const today = todayISO();
+        const remainingDays = Math.max(0, diffDays(today, cfg.targetDate));
+        const weeklyPace = remainingDays > 0 ? remaining / remainingDays * 7 : remaining;
+        const elapsed = clamp(diffDays(cfg.startDate, today), 0, Math.max(1, diffDays(cfg.startDate, cfg.targetDate)));
+        const plannedToday = cfg.startWeight - totalNeeded * (elapsed / Math.max(1, diffDays(cfg.startDate, cfg.targetDate)));
+        const ahead = plannedToday - current;
+        const circumference = 2 * Math.PI * 91;
+
+        document.getElementById("orbit-progress").style.strokeDasharray = String(circumference);
+        document.getElementById("orbit-progress").style.strokeDashoffset = String(circumference * (1 - progress));
+        document.getElementById("orbit-percent").textContent = Math.round(progress * 100) + "%";
+        document.getElementById("hero-remaining").textContent = formatNumber(remaining, 1) + " kg";
+        document.getElementById("stat-weight").textContent = formatWeight(current);
+        document.getElementById("stat-weight-date").textContent = latest ? "gemeten op " + formatDate(latest.date, true) : "nog geen weging";
+        document.getElementById("stat-lost").textContent = (lost >= 0 ? "−" : "+") + formatNumber(Math.abs(lost), 2) + " kg";
+        document.getElementById("stat-lost-context").textContent = "sinds " + formatDate(cfg.startDate, true);
+        document.getElementById("stat-days").textContent = remainingDays + (remainingDays === 1 ? " dag" : " dagen");
+        document.getElementById("stat-pace").textContent = remaining > 0 && remainingDays > 0 ? formatNumber(weeklyPace, 2) + " kg per week nodig" : "doeldatum bereikt";
+        document.getElementById("target-line-title").textContent = "De lijn naar " + parseDate(cfg.targetDate).toLocaleDateString("nl-NL", { day: "numeric", month: "long" });
+
+        const monday = getMonday(today);
+        const weekTrainings = state.trainings.filter(item => item.date >= monday && item.date <= today).length;
+        const proteinDates = new Set([
+          ...state.daily.filter(item => item.date >= monday && item.date <= today && item.protein != null).map(item => item.date),
+          ...state.nutrition.filter(item => item.date >= monday && item.date <= today).map(item => item.date)
+        ]);
+        const weekProtein = [...proteinDates].map(proteinForDate).filter(value => value != null);
+        const proteinAverage = weekProtein.length ? Math.round(weekProtein.reduce((a, b) => a + b, 0) / weekProtein.length) : null;
+        document.getElementById("stat-training").textContent = weekTrainings + " / " + cfg.weeklyTrainingGoal;
+        document.getElementById("stat-protein").textContent = proteinAverage == null ? "nog geen eiwit gelogd" : "gem. " + proteinAverage + " g eiwit";
+
+        const heroStatus = document.getElementById("hero-status");
+        const heroMessage = document.getElementById("hero-message");
+        if (remaining <= 0) {
+          heroStatus.textContent = "Doel behaald";
+          heroMessage.textContent = "Je zit onder je ingestelde streefgewicht. Houd nu vooral je routine en energie stabiel.";
+        } else if (ahead >= 0) {
+          heroStatus.textContent = "Voor op schema";
+          heroMessage.textContent = "Je ligt " + formatNumber(ahead, 1) + " kg voor op de lineaire doellijn. Houd je eiwit en trainingen stabiel; dagelijkse schommelingen zijn normaal.";
+        } else {
+          heroStatus.textContent = "Focus op ritme";
+          heroMessage.textContent = "Je ligt " + formatNumber(Math.abs(ahead), 1) + " kg achter op de lineaire doellijn. Kijk naar de weektrend en stuur rustig bij.";
+        }
+      }
+
+      function svgText(x, y, text, anchor = "start") {
+        return '<text class="chart-label" x="' + x + '" y="' + y + '" text-anchor="' + anchor + '">' + escapeHTML(text) + '</text>';
+      }
+
+      function renderWeightChart() {
+        const host = document.getElementById("weight-chart");
+        const points = sortByDate(state.daily.filter(item => item.weight != null));
+        if (!points.length) { host.innerHTML = '<div class="empty-state">Voeg een weging toe om de grafiek te starten.</div>'; return; }
+
+        const W = 760, H = 290, pad = { l: 48, r: 18, t: 18, b: 40 };
+        const start = parseDate(state.config.startDate).getTime();
+        const actualEnd = parseDate(points.at(-1).date).getTime();
+        const targetEnd = parseDate(state.config.targetDate).getTime();
+        const end = Math.max(start + 86400000, actualEnd, targetEnd);
+        const weights = points.map(p => p.weight).concat([state.config.startWeight, state.config.targetWeight]);
+        const minY = Math.floor(Math.min(...weights) - 1);
+        const maxY = Math.ceil(Math.max(...weights) + 1);
+        const x = date => pad.l + ((parseDate(date).getTime() - start) / (end - start)) * (W - pad.l - pad.r);
+        const y = value => pad.t + ((maxY - value) / (maxY - minY || 1)) * (H - pad.t - pad.b);
+        const path = points.map((p, i) => (i ? "L" : "M") + x(p.date).toFixed(1) + " " + y(p.weight).toFixed(1)).join(" ");
+        const area = path + " L " + x(points.at(-1).date).toFixed(1) + " " + (H - pad.b) + " L " + x(points[0].date).toFixed(1) + " " + (H - pad.b) + " Z";
+        let grid = "";
+        for (let i = 0; i < 5; i++) {
+          const value = maxY - (maxY - minY) * i / 4;
+          const gy = y(value);
+          grid += '<line class="chart-gridline" x1="' + pad.l + '" x2="' + (W - pad.r) + '" y1="' + gy + '" y2="' + gy + '"></line>' + svgText(pad.l - 8, gy + 4, formatNumber(value, 1), "end");
+        }
+        const xLabels = [state.config.startDate, points.at(-1).date, state.config.targetDate].filter((value, index, arr) => arr.indexOf(value) === index);
+        const labels = xLabels.map((date, i) => svgText(x(date), H - 12, formatDate(date, true), i === 0 ? "start" : (i === xLabels.length - 1 ? "end" : "middle"))).join("");
+        const circles = points.map((p, i) => '<circle class="chart-point' + (i === points.length - 1 ? ' chart-point-latest' : '') + '" cx="' + x(p.date) + '" cy="' + y(p.weight) + '" r="' + (i === points.length - 1 ? 6 : 4) + '"><title>' + escapeHTML(formatDate(p.date) + ": " + formatWeight(p.weight)) + '</title></circle>').join("");
+        const gradientId = "weightArea";
+        host.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Gewicht van ' + formatWeight(points[0].weight) + ' naar ' + formatWeight(points.at(-1).weight) + '"><defs><linearGradient id="' + gradientId + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#225c4b" stop-opacity=".22"/><stop offset="1" stop-color="#225c4b" stop-opacity="0"/></linearGradient></defs>' + grid + labels + '<path class="chart-area" d="' + area + '"></path><path class="chart-goal" d="M' + x(state.config.startDate) + ' ' + y(state.config.startWeight) + ' L' + x(state.config.targetDate) + ' ' + y(state.config.targetWeight) + '"></path><path class="chart-line" d="' + path + '"></path>' + circles + '</svg>';
+      }
+
+      function renderWeekBars() {
+        const host = document.getElementById("week-bars");
+        const end = parseDate(todayISO());
+        const days = [];
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(end);
+          date.setDate(end.getDate() - i);
+          days.push(date.toISOString().slice(0, 10));
+        }
+        const max = Math.max(170, state.config.proteinMax);
+        host.innerHTML = days.map(date => {
+          const protein = proteinForDate(date);
+          const trained = state.trainings.some(item => item.date === date);
+          const height = protein == null ? 2 : clamp(protein / max * 100, 2, 100);
+          const targetTop = 100 - clamp(state.config.proteinMin / max * 100, 0, 100);
+          return '<div class="day-bar"><div class="bar-track" title="' + (protein == null ? "Geen eiwit gelogd" : protein + " g eiwit") + '"><div class="bar-target" style="top:' + targetTop + '%"></div><div class="bar-fill" style="height:' + height + '%;opacity:' + (protein == null ? .18 : 1) + '"></div></div><strong>' + parseDate(date).toLocaleDateString("nl-NL", { weekday: "short" }).replace(".", "") + '</strong><small>' + (protein == null ? "—" : protein + "g") + '</small><span class="training-tick' + (trained ? " done" : "") + '" aria-label="' + (trained ? "Getraind" : "Niet getraind") + '">✓</span></div>';
+        }).join("");
+      }
+
+      function renderDailyEntries() {
+        const host = document.getElementById("daily-entries");
+        const items = sortByDate(state.daily).reverse();
+        document.getElementById("daily-count").textContent = items.length + (items.length === 1 ? " registratie" : " registraties");
+        if (!items.length) { host.innerHTML = '<div class="empty-state">Nog niets geregistreerd.</div>'; return; }
+        host.innerHTML = items.map(item => {
+          const main = [item.weight != null ? formatWeight(item.weight) : null, item.protein != null ? item.protein + " g eiwit" : null].filter(Boolean).join(" · ") || "Dagnotitie";
+          return '<div class="entry-row"><div class="entry-date">' + escapeHTML(formatDate(item.date)) + '</div><div class="entry-main"><strong>' + escapeHTML(main) + '</strong><span>' + escapeHTML(item.note || "Geen notitie") + '</span></div><div class="entry-actions"><button class="icon-btn" type="button" data-edit-daily="' + item.id + '" aria-label="Bewerken">✎</button><button class="icon-btn delete" type="button" data-delete-daily="' + item.id + '" aria-label="Verwijderen">×</button></div></div>';
+        }).join("");
+      }
+
+      const metricLabels = { waist: "Taille (navel)", narrowWaist: "Smalste taille", hips: "Heupen", chest: "Borst", upperArm: "Bovenarm", thigh: "Bovenbeen" };
+
+      function renderMeasurementEntries() {
+        const host = document.getElementById("measurement-entries");
+        const items = sortByDate(state.measurements).reverse();
+        document.getElementById("measurement-count").textContent = items.length + (items.length === 1 ? " meting" : " metingen");
+        if (!items.length) { host.innerHTML = '<tr><td colspan="8"><div class="empty-state">Nog geen omtrek gemeten.</div></td></tr>'; return; }
+        const cell = (label, value) => '<td data-label="' + label + '">' + (value == null ? "—" : formatNumber(value, 1) + " cm") + '</td>';
+        host.innerHTML = items.map(item => '<tr><td data-label="Datum">' + escapeHTML(formatDate(item.date)) + '</td>' + cell("Taille", item.waist) + cell("Smalste", item.narrowWaist) + cell("Heupen", item.hips) + cell("Borst", item.chest) + cell("Arm", item.upperArm) + cell("Been", item.thigh) + '<td data-label="Acties"><button class="icon-btn" type="button" data-edit-measurement="' + item.id + '" aria-label="Bewerken">✎</button><button class="icon-btn delete" type="button" data-delete-measurement="' + item.id + '" aria-label="Verwijderen">×</button></td></tr>').join("");
+      }
+
+      function renderMeasurementChart() {
+        const host = document.getElementById("measurement-chart");
+        const metric = document.getElementById("measurement-metric").value;
+        const points = sortByDate(state.measurements.filter(item => item[metric] != null));
+        if (!points.length) { host.innerHTML = '<div class="empty-state">Voeg een weekmeting toe voor deze grafiek.</div>'; return; }
+        if (points.length === 1) {
+          host.innerHTML = '<div class="empty-state"><strong style="display:block;font-size:2.4rem;color:var(--ink);margin-bottom:8px">' + formatNumber(points[0][metric], 1) + ' cm</strong>' + escapeHTML(metricLabels[metric]) + ' op ' + escapeHTML(formatDate(points[0].date)) + '<br><small>Een tweede meting maakt de trend zichtbaar.</small></div>';
+          return;
+        }
+        const W = 760, H = 270, pad = { l: 48, r: 18, t: 18, b: 40 };
+        const values = points.map(p => p[metric]);
+        const minY = Math.floor(Math.min(...values) - 2);
+        const maxY = Math.ceil(Math.max(...values) + 2);
+        const start = parseDate(points[0].date).getTime();
+        const end = parseDate(points.at(-1).date).getTime();
+        const x = date => pad.l + ((parseDate(date).getTime() - start) / Math.max(86400000, end - start)) * (W - pad.l - pad.r);
+        const y = value => pad.t + ((maxY - value) / Math.max(1, maxY - minY)) * (H - pad.t - pad.b);
+        const path = points.map((p, i) => (i ? "L" : "M") + x(p.date) + " " + y(p[metric])).join(" ");
+        let grid = "";
+        for (let i = 0; i < 4; i++) {
+          const value = maxY - (maxY - minY) * i / 3;
+          grid += '<line class="chart-gridline" x1="' + pad.l + '" x2="' + (W - pad.r) + '" y1="' + y(value) + '" y2="' + y(value) + '"></line>' + svgText(pad.l - 8, y(value) + 4, formatNumber(value, 1), "end");
+        }
+        host.innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Trend ' + escapeHTML(metricLabels[metric]) + '">' + grid + svgText(x(points[0].date), H - 12, formatDate(points[0].date, true), "start") + svgText(x(points.at(-1).date), H - 12, formatDate(points.at(-1).date, true), "end") + '<path class="chart-line" d="' + path + '"></path>' + points.map((p, i) => '<circle class="chart-point' + (i === points.length - 1 ? ' chart-point-latest' : '') + '" cx="' + x(p.date) + '" cy="' + y(p[metric]) + '" r="5"><title>' + escapeHTML(formatDate(p.date) + ": " + formatNumber(p[metric], 1) + " cm") + '</title></circle>').join("") + '</svg>';
+      }
+
+      function renderTrainingEntries() {
+        const host = document.getElementById("training-entries");
+        const items = sortByDate(state.trainings).reverse();
+        document.getElementById("training-count").textContent = items.length + (items.length === 1 ? " sessie" : " sessies");
+        if (!items.length) { host.innerHTML = '<div class="empty-state">Nog geen trainingen geregistreerd.</div>'; return; }
+        host.innerHTML = items.map(item => '<div class="entry-row"><div class="entry-date">' + escapeHTML(formatDate(item.date)) + '</div><div class="entry-main"><strong>' + escapeHTML(item.type) + (item.duration ? " · " + item.duration + " min" : "") + (item.rpe ? " · RPE " + item.rpe : "") + '</strong><span>' + escapeHTML(item.note || "Geen notitie") + '</span></div><div class="entry-actions"><button class="icon-btn" type="button" data-edit-training="' + item.id + '" aria-label="Bewerken">✎</button><button class="icon-btn delete" type="button" data-delete-training="' + item.id + '" aria-label="Verwijderen">×</button></div></div>').join("");
+      }
+
+      function renderNutrition() {
+        const dayInput = document.getElementById("nutrition-day");
+        if (!dayInput.value) dayInput.value = todayISO();
+        const date = dayInput.value;
+        const cfg = state.config;
+        const totals = nutritionTotals(date);
+        const items = state.nutrition.filter(item => item.date === date);
+        const energyFromFat = totals.fat * 9;
+        const fatShare = totals.calories > 0 ? Math.round(energyFromFat / totals.calories * 100) : 0;
+        const setBar = (id, value, target) => { document.getElementById(id).style.width = clamp(target > 0 ? value / target * 100 : 0, 0, 100) + "%"; };
+
+        document.getElementById("nutrition-calories").textContent = Math.round(totals.calories).toLocaleString("nl-NL") + " kcal";
+        document.getElementById("nutrition-calories-note").textContent = "van " + cfg.calorieTarget.toLocaleString("nl-NL") + " kcal";
+        document.getElementById("nutrition-protein").textContent = formatNumber(totals.protein, totals.protein % 1 ? 1 : 0) + " g";
+        document.getElementById("nutrition-protein-note").textContent = "doel " + cfg.proteinMin + "–" + cfg.proteinMax + " g";
+        document.getElementById("nutrition-fat").textContent = formatNumber(totals.fat, totals.fat % 1 ? 1 : 0) + " g";
+        document.getElementById("nutrition-fat-note").textContent = fatShare + "% van je energie";
+        document.getElementById("nutrition-carbs").textContent = formatNumber(totals.carbs, totals.carbs % 1 ? 1 : 0) + " g";
+        document.getElementById("nutrition-carbs-note").textContent = "maximaal " + cfg.carbMax + " g";
+        setBar("nutrition-calories-bar", totals.calories, cfg.calorieTarget);
+        setBar("nutrition-protein-bar", totals.protein, cfg.proteinMin);
+        setBar("nutrition-fat-bar", totals.fat, 160);
+        setBar("nutrition-carbs-bar", totals.carbs, cfg.carbMax);
+
+        const badge = document.getElementById("nutrition-keto-badge");
+        badge.textContent = !items.length ? "Nog niets gelogd" : (totals.carbs <= cfg.carbMax ? "Binnen keto-doel" : "Boven carb-doel");
+        document.getElementById("nutrition-count").textContent = items.length + (items.length === 1 ? " item" : " items");
+        const host = document.getElementById("nutrition-entries");
+        if (!items.length) {
+          host.innerHTML = '<div class="empty-state">Nog geen maaltijden voor ' + escapeHTML(formatDate(date)) + '.</div>';
+          return;
+        }
+        host.innerHTML = items.map(item => {
+          const macros = [
+            item.calories != null ? Math.round(item.calories) + " kcal" : null,
+            item.protein != null ? formatNumber(item.protein, item.protein % 1 ? 1 : 0) + " g eiwit" : null,
+            item.fat != null ? formatNumber(item.fat, item.fat % 1 ? 1 : 0) + " g vet" : null,
+            item.carbs != null ? formatNumber(item.carbs, item.carbs % 1 ? 1 : 0) + " g kh" : null
+          ].filter(Boolean).join(" · ");
+          const detail = [macros, item.note].filter(Boolean).join(" — ") || "Geen macro's ingevuld";
+          return '<div class="entry-row"><div class="entry-date">' + escapeHTML(item.meal) + '</div><div class="entry-main"><strong>' + escapeHTML(item.name) + '</strong><span>' + escapeHTML(detail) + '</span></div><div class="entry-actions"><button class="icon-btn" type="button" data-edit-nutrition="' + item.id + '" aria-label="Bewerken">✎</button><button class="icon-btn delete" type="button" data-delete-nutrition="' + item.id + '" aria-label="Verwijderen">×</button></div></div>';
+        }).join("");
+      }
+
+      function renderSettings() {
+        const cfg = state.config;
+        document.getElementById("settings-name").value = cfg.name || "";
+        document.getElementById("settings-target-date").value = cfg.targetDate;
+        document.getElementById("settings-start-date").value = cfg.startDate;
+        document.getElementById("settings-start-weight").value = cfg.startWeight;
+        document.getElementById("settings-target-weight").value = cfg.targetWeight;
+        document.getElementById("settings-training-goal").value = cfg.weeklyTrainingGoal;
+        document.getElementById("settings-protein-min").value = cfg.proteinMin;
+        document.getElementById("settings-protein-max").value = cfg.proteinMax;
+        document.getElementById("settings-calorie-target").value = cfg.calorieTarget;
+        document.getElementById("settings-carb-max").value = cfg.carbMax;
+      }
+
+      function resetDailyForm() {
+        document.getElementById("daily-form").reset();
+        document.getElementById("daily-id").value = "";
+        document.getElementById("daily-date").value = todayISO();
+        document.getElementById("daily-form-title").textContent = "Dag bijwerken";
+        document.getElementById("daily-cancel").hidden = true;
+      }
+
+      function resetMeasurementForm() {
+        document.getElementById("measurement-form").reset();
+        document.getElementById("measurement-id").value = "";
+        document.getElementById("measurement-date").value = todayISO();
+        document.getElementById("measurement-form-title").textContent = "Weekmeting";
+        document.getElementById("measurement-cancel").hidden = true;
+      }
+
+      function resetTrainingForm() {
+        document.getElementById("training-form").reset();
+        document.getElementById("training-id").value = "";
+        document.getElementById("training-date").value = todayISO();
+        document.getElementById("training-rpe").value = 7;
+        document.getElementById("training-rpe-output").textContent = "7";
+        document.getElementById("training-form-title").textContent = "Nieuwe training";
+        document.getElementById("training-cancel").hidden = true;
+      }
+
+      function resetNutritionForm() {
+        document.getElementById("nutrition-form").reset();
+        document.getElementById("nutrition-id").value = "";
+        const selectedDate = document.getElementById("nutrition-day").value || todayISO();
+        document.getElementById("nutrition-day").value = selectedDate;
+        document.getElementById("nutrition-date").value = selectedDate;
+        document.getElementById("nutrition-form-title").textContent = "Maaltijd toevoegen";
+        document.getElementById("nutrition-cancel").hidden = true;
+      }
+
+      function editDaily(item) {
+        setPanel("body");
+        showBodyView("daily");
+        document.getElementById("daily-id").value = item.id;
+        document.getElementById("daily-date").value = item.date;
+        document.getElementById("daily-weight").value = item.weight ?? "";
+        document.getElementById("daily-protein").value = item.protein ?? "";
+        document.getElementById("daily-note").value = item.note || "";
+        document.getElementById("daily-form-title").textContent = "Dag bewerken";
+        document.getElementById("daily-cancel").hidden = false;
+        document.getElementById("daily-date").focus();
+      }
+
+      function editMeasurement(item) {
+        setPanel("body");
+        showBodyView("measurements");
+        document.getElementById("measurement-id").value = item.id;
+        document.getElementById("measurement-date").value = item.date;
+        document.getElementById("measurement-waist").value = item.waist ?? "";
+        document.getElementById("measurement-narrow-waist").value = item.narrowWaist ?? "";
+        document.getElementById("measurement-hips").value = item.hips ?? "";
+        document.getElementById("measurement-chest").value = item.chest ?? "";
+        document.getElementById("measurement-arm").value = item.upperArm ?? "";
+        document.getElementById("measurement-thigh").value = item.thigh ?? "";
+        document.getElementById("measurement-form-title").textContent = "Weekmeting bewerken";
+        document.getElementById("measurement-cancel").hidden = false;
+        document.getElementById("measurement-date").focus();
+      }
+
+      function editTraining(item) {
+        setPanel("training");
+        document.getElementById("training-id").value = item.id;
+        document.getElementById("training-date").value = item.date;
+        document.getElementById("training-type").value = item.type;
+        document.getElementById("training-duration").value = item.duration ?? "";
+        document.getElementById("training-rpe").value = item.rpe ?? 7;
+        document.getElementById("training-rpe-output").textContent = item.rpe ?? 7;
+        document.getElementById("training-note").value = item.note || "";
+        document.getElementById("training-form-title").textContent = "Training bewerken";
+        document.getElementById("training-cancel").hidden = false;
+        document.getElementById("training-date").focus();
+      }
+
+      function editNutrition(item) {
+        setPanel("nutrition");
+        document.getElementById("nutrition-day").value = item.date;
+        document.getElementById("nutrition-id").value = item.id;
+        document.getElementById("nutrition-date").value = item.date;
+        document.getElementById("nutrition-meal").value = item.meal;
+        document.getElementById("nutrition-name").value = item.name;
+        document.getElementById("nutrition-calories-input").value = item.calories ?? "";
+        document.getElementById("nutrition-protein-input").value = item.protein ?? "";
+        document.getElementById("nutrition-fat-input").value = item.fat ?? "";
+        document.getElementById("nutrition-carbs-input").value = item.carbs ?? "";
+        document.getElementById("nutrition-note").value = item.note || "";
+        document.getElementById("nutrition-form-title").textContent = "Maaltijd bewerken";
+        document.getElementById("nutrition-cancel").hidden = false;
+        renderNutrition();
+        document.getElementById("nutrition-name").focus();
+      }
+
+      function showBodyView(view) {
+        document.getElementById("body-view-daily").hidden = view !== "daily";
+        document.getElementById("body-view-measurements").hidden = view !== "measurements";
+        document.querySelectorAll("[data-body-view]").forEach(button => button.classList.toggle("active", button.dataset.bodyView === view));
+        if (view === "measurements") requestAnimationFrame(renderMeasurementChart);
+      }
+
+      document.querySelectorAll("[data-panel-target]").forEach(button => button.addEventListener("click", () => setPanel(button.dataset.panelTarget)));
+      document.querySelectorAll("[data-panel-link]").forEach(button => button.addEventListener("click", () => setPanel(button.dataset.panelLink)));
+      document.querySelectorAll("[data-quick-log]").forEach(button => button.addEventListener("click", () => { setPanel("body"); showBodyView("daily"); resetDailyForm(); setTimeout(() => document.getElementById("daily-weight").focus(), 250); }));
+      document.querySelectorAll("[data-body-view]").forEach(button => button.addEventListener("click", () => showBodyView(button.dataset.bodyView)));
+      document.querySelectorAll("[data-focus-form]").forEach(button => button.addEventListener("click", () => { const target = document.getElementById(button.dataset.focusForm); if (target) target.focus(); }));
+
+      document.getElementById("daily-form").addEventListener("submit", event => {
+        event.preventDefault();
+        const itemId = document.getElementById("daily-id").value;
+        const item = {
+          id: itemId || id("d"),
+          date: document.getElementById("daily-date").value,
+          weight: number(document.getElementById("daily-weight").value),
+          protein: number(document.getElementById("daily-protein").value),
+          note: document.getElementById("daily-note").value.trim()
+        };
+        if (item.weight == null && item.protein == null && !item.note) { showToast("Vul minimaal één waarde in"); return; }
+        const index = state.daily.findIndex(entry => entry.id === item.id);
+        if (index >= 0) state.daily[index] = item; else {
+          const sameDate = state.daily.findIndex(entry => entry.date === item.date);
+          if (sameDate >= 0) item.id = state.daily[sameDate].id, state.daily[sameDate] = item; else state.daily.push(item);
+        }
+        resetDailyForm();
+        saveState("Dag opgeslagen");
+      });
+
+      document.getElementById("measurement-form").addEventListener("submit", event => {
+        event.preventDefault();
+        const itemId = document.getElementById("measurement-id").value;
+        const item = {
+          id: itemId || id("m"),
+          date: document.getElementById("measurement-date").value,
+          waist: number(document.getElementById("measurement-waist").value),
+          narrowWaist: number(document.getElementById("measurement-narrow-waist").value),
+          hips: number(document.getElementById("measurement-hips").value),
+          chest: number(document.getElementById("measurement-chest").value),
+          upperArm: number(document.getElementById("measurement-arm").value),
+          thigh: number(document.getElementById("measurement-thigh").value)
+        };
+        if ([item.waist, item.narrowWaist, item.hips, item.chest, item.upperArm, item.thigh].every(value => value == null)) { showToast("Vul minimaal één omtrek in"); return; }
+        const index = state.measurements.findIndex(entry => entry.id === item.id);
+        if (index >= 0) state.measurements[index] = item; else {
+          const sameDate = state.measurements.findIndex(entry => entry.date === item.date);
+          if (sameDate >= 0) item.id = state.measurements[sameDate].id, state.measurements[sameDate] = item; else state.measurements.push(item);
+        }
+        resetMeasurementForm();
+        saveState("Weekmeting opgeslagen");
+      });
+
+      document.getElementById("training-form").addEventListener("submit", event => {
+        event.preventDefault();
+        const itemId = document.getElementById("training-id").value;
+        const item = {
+          id: itemId || id("t"),
+          date: document.getElementById("training-date").value,
+          type: document.getElementById("training-type").value,
+          duration: number(document.getElementById("training-duration").value),
+          rpe: number(document.getElementById("training-rpe").value),
+          note: document.getElementById("training-note").value.trim()
+        };
+        const index = state.trainings.findIndex(entry => entry.id === item.id);
+        if (index >= 0) state.trainings[index] = item; else state.trainings.push(item);
+        resetTrainingForm();
+        saveState("Training opgeslagen");
+      });
+
+      document.getElementById("nutrition-form").addEventListener("submit", event => {
+        event.preventDefault();
+        const itemId = document.getElementById("nutrition-id").value;
+        const item = {
+          id: itemId || id("n"),
+          date: document.getElementById("nutrition-date").value,
+          meal: document.getElementById("nutrition-meal").value,
+          name: document.getElementById("nutrition-name").value.trim(),
+          calories: number(document.getElementById("nutrition-calories-input").value),
+          protein: number(document.getElementById("nutrition-protein-input").value),
+          fat: number(document.getElementById("nutrition-fat-input").value),
+          carbs: number(document.getElementById("nutrition-carbs-input").value),
+          note: document.getElementById("nutrition-note").value.trim()
+        };
+        const index = state.nutrition.findIndex(entry => entry.id === item.id);
+        if (index >= 0) state.nutrition[index] = item; else state.nutrition.push(item);
+        document.getElementById("nutrition-day").value = item.date;
+        resetNutritionForm();
+        saveState("Maaltijd opgeslagen");
+      });
+
+      document.getElementById("settings-form").addEventListener("submit", event => {
+        event.preventDefault();
+        const proteinMin = number(document.getElementById("settings-protein-min").value);
+        const proteinMax = number(document.getElementById("settings-protein-max").value);
+        if (proteinMax < proteinMin) { showToast("Eiwitmaximum moet boven het minimum liggen"); return; }
+        state.config = {
+          name: document.getElementById("settings-name").value.trim(),
+          targetDate: document.getElementById("settings-target-date").value,
+          startDate: document.getElementById("settings-start-date").value,
+          startWeight: number(document.getElementById("settings-start-weight").value),
+          targetWeight: number(document.getElementById("settings-target-weight").value),
+          weeklyTrainingGoal: number(document.getElementById("settings-training-goal").value),
+          proteinMin,
+          proteinMax,
+          calorieTarget: number(document.getElementById("settings-calorie-target").value),
+          carbMax: number(document.getElementById("settings-carb-max").value)
+        };
+        saveState("Doelen bijgewerkt");
+      });
+
+      document.getElementById("daily-cancel").addEventListener("click", resetDailyForm);
+      document.getElementById("measurement-cancel").addEventListener("click", resetMeasurementForm);
+      document.getElementById("training-cancel").addEventListener("click", resetTrainingForm);
+      document.getElementById("nutrition-cancel").addEventListener("click", resetNutritionForm);
+      document.getElementById("measurement-metric").addEventListener("change", renderMeasurementChart);
+      document.getElementById("training-rpe").addEventListener("input", event => { document.getElementById("training-rpe-output").textContent = event.target.value; });
+      document.getElementById("nutrition-day").addEventListener("change", event => {
+        resetNutritionForm();
+        document.getElementById("nutrition-date").value = event.target.value;
+        renderNutrition();
+      });
+
+      document.getElementById("cloud-status").addEventListener("click", () => {
+        updateAuthView();
+        const dialog = document.getElementById("auth-dialog");
+        if (typeof dialog.showModal === "function") dialog.showModal(); else dialog.setAttribute("open", "");
+      });
+      document.getElementById("auth-close").addEventListener("click", () => document.getElementById("auth-dialog").close());
+      document.getElementById("auth-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        const message = document.getElementById("auth-message");
+        if (!supabaseClient) { message.textContent = "De beveiligde database is nog niet gekoppeld."; return; }
+        const email = document.getElementById("auth-email").value.trim();
+        message.textContent = "Inloglink versturen…";
+        const redirectTo = location.origin === "null" ? location.href : location.origin + location.pathname;
+        const { error } = await supabaseClient.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo, shouldCreateUser: true } });
+        message.textContent = error ? "Versturen mislukt: " + error.message : "Controleer je e-mail en open de inloglink op dit apparaat.";
+      });
+      document.getElementById("sync-now").addEventListener("click", async () => {
+        await pushRemoteState();
+        document.getElementById("auth-message").textContent = "Je gegevens zijn gesynchroniseerd.";
+      });
+      document.getElementById("auth-logout").addEventListener("click", async () => {
+        if (supabaseClient) await supabaseClient.auth.signOut();
+        currentUser = null;
+        state = clone(seed);
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(UPDATED_KEY);
+        renderAll();
+        updateAuthView();
+        setCloudStatus("Niet ingelogd");
+        document.getElementById("auth-dialog").close();
+      });
+
+      document.addEventListener("click", event => {
+        const button = event.target.closest("button");
+        if (!button) return;
+        const actions = [
+          ["editDaily", "editDaily"], ["editMeasurement", "editMeasurement"], ["editTraining", "editTraining"], ["editNutrition", "editNutrition"],
+          ["deleteDaily", "deleteDaily"], ["deleteMeasurement", "deleteMeasurement"], ["deleteTraining", "deleteTraining"], ["deleteNutrition", "deleteNutrition"]
+        ];
+        for (const [datasetKey, action] of actions) {
+          if (!button.dataset[datasetKey]) continue;
+          const itemId = button.dataset[datasetKey];
+          if (action === "editDaily") editDaily(state.daily.find(item => item.id === itemId));
+          if (action === "editMeasurement") editMeasurement(state.measurements.find(item => item.id === itemId));
+          if (action === "editTraining") editTraining(state.trainings.find(item => item.id === itemId));
+          if (action === "editNutrition") editNutrition(state.nutrition.find(item => item.id === itemId));
+          if (action.startsWith("delete")) {
+            const map = { deleteDaily: "daily", deleteMeasurement: "measurements", deleteTraining: "trainings", deleteNutrition: "nutrition" };
+            const type = map[action];
+            if (confirm("Deze registratie verwijderen?")) {
+              state[type] = state[type].filter(item => item.id !== itemId);
+              saveState("Registratie verwijderd");
+            }
+          }
+          break;
+        }
+      });
+
+      document.getElementById("export-data").addEventListener("click", () => {
+        const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "vakantiekompas-backup-" + todayISO() + ".json";
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        showToast("Back-up geëxporteerd");
+      });
+
+      document.getElementById("import-data").addEventListener("change", event => {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const imported = JSON.parse(reader.result);
+            if (!imported.config || !Array.isArray(imported.daily) || !Array.isArray(imported.measurements) || !Array.isArray(imported.trainings)) throw new Error("Ongeldig formaat");
+            imported.nutrition = Array.isArray(imported.nutrition) ? imported.nutrition : [];
+            imported.config.calorieTarget = imported.config.calorieTarget ?? 1900;
+            imported.config.carbMax = imported.config.carbMax ?? 30;
+            state = imported;
+            saveState("Back-up geïmporteerd");
+          } catch (error) {
+            showToast("Dit bestand is geen geldige back-up");
+          }
+          event.target.value = "";
+        };
+        reader.readAsText(file);
+      });
+
+      document.getElementById("reset-data").addEventListener("click", () => {
+        if (!confirm("Alle registraties en instellingen wissen en opnieuw beginnen?")) return;
+        state = { config: clone(seed.config), daily: [], measurements: [], trainings: [], nutrition: [] };
+        saveState("Alle gegevens zijn gewist");
+        resetDailyForm();
+        resetMeasurementForm();
+        resetTrainingForm();
+        resetNutritionForm();
+      });
+
+      window.addEventListener("resize", () => {
+        clearTimeout(window.__chartResizeTimer);
+        window.__chartResizeTimer = setTimeout(() => { renderWeightChart(); renderMeasurementChart(); }, 120);
+      });
+      window.addEventListener("online", () => { if (currentUser) reconcileRemoteState(); });
+
+      resetDailyForm();
+      resetMeasurementForm();
+      resetTrainingForm();
+      resetNutritionForm();
+      renderAll();
+      initializeCloud();
+      if ("serviceWorker" in navigator && location.protocol !== "file:") {
+        navigator.serviceWorker.register("./sw.js").catch(error => console.warn("Offline installatie niet beschikbaar", error));
+      }
+    })();
+  </script>
+</body>
+</html>
