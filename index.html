@@ -474,6 +474,15 @@
     .session-progress-head { display: flex; justify-content: space-between; color: var(--muted); font-size: .76rem; }
     .session-progress-track { height: 8px; margin-top: 7px; overflow: hidden; border-radius: 999px; background: #e9e5dc; }
     .session-progress-fill { height: 100%; width: 0; border-radius: inherit; background: var(--forest-2); transition: width .2s ease; }
+    .previous-session { margin-top: 16px; padding: 15px; border: 1px solid rgba(93,143,163,.3); border-radius: 16px; background: rgba(93,143,163,.08); }
+    .previous-session-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .previous-session-head span { color: var(--muted); font-size: .72rem; }
+    .previous-session-head strong { display: block; margin-top: 3px; font-size: .92rem; }
+    .previous-session-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .previous-chip { padding: 5px 8px; border-radius: 999px; background: var(--card); color: var(--forest); font-size: .7rem; font-weight: 700; }
+    .previous-session p { margin: 10px 0 0; color: var(--muted); font-size: .76rem; line-height: 1.45; }
+    .exercise-previous { margin: 0 0 11px 34px; padding: 8px 10px; border-radius: 10px; background: rgba(93,143,163,.1); color: var(--forest); font-size: .7rem; line-height: 1.4; }
+    .exercise-previous strong { font-size: inherit; }
 
     @media (max-width: 900px) {
       .hero { grid-template-columns: 1fr; }
@@ -712,6 +721,11 @@
               <div class="field full"><label for="training-rpe">Zwaarte / RPE (1–10)</label><input id="training-rpe" type="range" min="1" max="10" step="1" value="7"><div class="fineprint">Gekozen: <strong id="training-rpe-output">7</strong></div></div>
               <div class="field full"><label for="training-note">Notities (optioneel)</label><textarea id="training-note" placeholder="Belangrijkste oefeningen, gewichten of hoe het ging…"></textarea></div>
             </div>
+            <div class="previous-session" id="previous-training" hidden>
+              <div class="previous-session-head"><div><span>Vorige keer</span><strong id="previous-training-title"></strong></div><span id="previous-training-date"></span></div>
+              <div class="previous-session-meta" id="previous-training-meta"></div>
+              <p id="previous-training-note"></p>
+            </div>
             <div id="training-exercise-section">
               <div class="session-progress"><div class="session-progress-head"><strong>Oefeningen</strong><span id="exercise-progress-label">0 / 0 afgevinkt</span></div><div class="session-progress-track"><div class="session-progress-fill" id="exercise-progress-fill"></div></div></div>
               <div class="exercise-list" id="training-exercises"></div>
@@ -949,17 +963,65 @@
         return (TRAINING_TEMPLATES[type] || []).map((exercise, index) => ({ id: "e" + index, group: exercise[0], name: exercise[1], target: exercise[2], done: false, sets: "", reps: "", weight: "", rating: "", rir: "" }));
       }
 
+      function currentTemplateType(type) {
+        const legacy = { "Full body": "Full Body A – Pull Focus", "Pull": "Full Body A – Pull Focus", "Benen": "Full Body B – Lower Focus", "Push": "Full Body C – Push & Core Focus" };
+        return TRAINING_TEMPLATES[type] ? type : (legacy[type] || type);
+      }
+
+      function trainingTypesMatch(savedType, selectedType) {
+        return currentTemplateType(savedType) === currentTemplateType(selectedType);
+      }
+
+      function findPreviousTraining() {
+        const selectedType = document.getElementById("training-type").value;
+        const currentId = document.getElementById("training-id").value;
+        const currentDate = document.getElementById("training-date").value;
+        return state.trainings
+          .filter(item => item.id !== currentId && trainingTypesMatch(item.type, selectedType) && (!currentDate || item.date < currentDate))
+          .sort((a, b) => b.date.localeCompare(a.date))[0] || null;
+      }
+
+      function renderPreviousTraining(previous) {
+        const card = document.getElementById("previous-training");
+        card.hidden = !previous;
+        if (!previous) return;
+        document.getElementById("previous-training-title").textContent = previous.type;
+        document.getElementById("previous-training-date").textContent = formatDate(previous.date);
+        document.getElementById("previous-training-meta").innerHTML = [
+          previous.duration ? previous.duration + " min" : null,
+          previous.rpe ? "Sessie-RPE " + previous.rpe : null,
+          Array.isArray(previous.exercises) && previous.exercises.length ? previous.exercises.filter(item => item.done).length + "/" + previous.exercises.length + " afgerond" : null
+        ].filter(Boolean).map(value => '<span class="previous-chip">' + escapeHTML(value) + '</span>').join("");
+        document.getElementById("previous-training-note").textContent = previous.note || (Array.isArray(previous.exercises) && previous.exercises.length ? "Resultaten per oefening staan hieronder." : "Nog geen oefenresultaten vastgelegd.");
+      }
+
+      function previousExerciseSummary(exercise, previous) {
+        if (!previous || !Array.isArray(previous.exercises)) return "";
+        const old = previous.exercises.find(item => item.name && item.name.toLowerCase() === exercise.name.toLowerCase());
+        if (!old) return "";
+        const values = [
+          old.sets ? old.sets + " sets" : null,
+          old.reps ? old.reps + " reps/sec" : null,
+          old.weight ? old.weight + " kg" : null,
+          old.rating ? "rating " + old.rating : null,
+          old.rir !== "" && old.rir != null ? "RIR " + old.rir : null
+        ].filter(Boolean);
+        return values.length ? '<div class="exercise-previous"><strong>Vorige:</strong> ' + escapeHTML(values.join(" · ")) + '</div>' : "";
+      }
+
       function renderTrainingExercises(exercises) {
         const host = document.getElementById("training-exercises");
         const section = document.getElementById("training-exercise-section");
         section.hidden = !exercises.length;
+        const previous = findPreviousTraining();
+        renderPreviousTraining(previous);
         let lastGroup = "";
         host.innerHTML = exercises.map((exercise, index) => {
           const group = exercise.group !== lastGroup ? '<div class="exercise-group">' + escapeHTML(exercise.group) + '</div>' : '';
           lastGroup = exercise.group;
           const ratingOptions = '<option value="">–</option>' + Array.from({length: 10}, (_, i) => '<option value="' + (i + 1) + '"' + (String(exercise.rating) === String(i + 1) ? ' selected' : '') + '>' + (i + 1) + '</option>').join("");
           const rirOptions = '<option value="">–</option>' + Array.from({length: 6}, (_, i) => '<option value="' + i + '"' + (String(exercise.rir) === String(i) ? ' selected' : '') + '>' + i + '</option>').join("");
-          return group + '<div class="exercise-card' + (exercise.done ? ' done' : '') + '" data-exercise-index="' + index + '"><div class="exercise-head"><input class="exercise-check" type="checkbox" data-exercise-field="done"' + (exercise.done ? ' checked' : '') + ' aria-label="' + escapeHTML(exercise.name) + ' afvinken"><div class="exercise-name"><strong>' + escapeHTML(exercise.name) + '</strong><span>Doel: ' + escapeHTML(exercise.target) + '</span></div></div><div class="exercise-fields"><label>Sets<input type="number" inputmode="numeric" min="0" max="20" data-exercise-field="sets" value="' + escapeHTML(exercise.sets ?? "") + '"></label><label>Reps / sec<input type="text" inputmode="numeric" maxlength="20" data-exercise-field="reps" value="' + escapeHTML(exercise.reps ?? "") + '"></label><label>Gewicht kg<input type="number" inputmode="decimal" min="0" max="1000" step="0.5" data-exercise-field="weight" value="' + escapeHTML(exercise.weight ?? "") + '"></label><label>Rating 1–10<select data-exercise-field="rating">' + ratingOptions + '</select></label><label>RIR<select data-exercise-field="rir">' + rirOptions + '</select></label></div></div>';
+          return group + '<div class="exercise-card' + (exercise.done ? ' done' : '') + '" data-exercise-index="' + index + '"><div class="exercise-head"><input class="exercise-check" type="checkbox" data-exercise-field="done"' + (exercise.done ? ' checked' : '') + ' aria-label="' + escapeHTML(exercise.name) + ' afvinken"><div class="exercise-name"><strong>' + escapeHTML(exercise.name) + '</strong><span>Doel: ' + escapeHTML(exercise.target) + '</span></div></div>' + previousExerciseSummary(exercise, previous) + '<div class="exercise-fields"><label>Sets<input type="number" inputmode="numeric" min="0" max="20" data-exercise-field="sets" value="' + escapeHTML(exercise.sets ?? "") + '"></label><label>Reps / sec<input type="text" inputmode="numeric" maxlength="20" data-exercise-field="reps" value="' + escapeHTML(exercise.reps ?? "") + '"></label><label>Gewicht kg<input type="number" inputmode="decimal" min="0" max="1000" step="0.5" data-exercise-field="weight" value="' + escapeHTML(exercise.weight ?? "") + '"></label><label>Rating 1–10<select data-exercise-field="rating">' + ratingOptions + '</select></label><label>RIR<select data-exercise-field="rir">' + rirOptions + '</select></label></div></div>';
         }).join("");
         updateExerciseProgress();
       }
@@ -1587,12 +1649,13 @@
         setPanel("training");
         document.getElementById("training-id").value = item.id;
         document.getElementById("training-date").value = item.date;
-        document.getElementById("training-type").value = item.type;
+        const displayType = currentTemplateType(item.type);
+        document.getElementById("training-type").value = displayType;
         document.getElementById("training-duration").value = item.duration ?? "";
         document.getElementById("training-rpe").value = item.rpe ?? 7;
         document.getElementById("training-rpe-output").textContent = item.rpe ?? 7;
         document.getElementById("training-note").value = item.note || "";
-        renderTrainingExercises(Array.isArray(item.exercises) && item.exercises.length ? item.exercises : templateExercises(item.type));
+        renderTrainingExercises(Array.isArray(item.exercises) && item.exercises.length ? item.exercises : templateExercises(displayType));
         document.getElementById("training-form-title").textContent = "Training bewerken";
         document.getElementById("training-cancel").hidden = false;
         document.getElementById("training-date").focus();
@@ -1738,6 +1801,10 @@
       document.getElementById("measurement-metric").addEventListener("change", renderMeasurementChart);
       document.getElementById("training-rpe").addEventListener("input", event => { document.getElementById("training-rpe-output").textContent = event.target.value; });
       document.getElementById("training-type").addEventListener("change", event => renderTrainingExercises(templateExercises(event.target.value)));
+      document.getElementById("training-date").addEventListener("change", () => {
+        const exercises = collectTrainingExercises();
+        renderTrainingExercises(exercises.length ? exercises : templateExercises(document.getElementById("training-type").value));
+      });
       document.getElementById("training-exercises").addEventListener("change", event => {
         if (event.target.matches('[data-exercise-field="done"]')) event.target.closest(".exercise-card").classList.toggle("done", event.target.checked);
         updateExerciseProgress();
