@@ -89,6 +89,9 @@
       background: rgba(255,253,248,.78);
       font-size: .72rem;
       white-space: nowrap;
+      min-height: 44px;
+      position: relative;
+      z-index: 2;
     }
     .cloud-status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--coral); }
     .cloud-status.online::before { background: #58a776; }
@@ -430,6 +433,26 @@
     .auth-close { position: absolute; top: 13px; right: 13px; }
     .auth-user { padding: 14px; margin-bottom: 14px; border-radius: 14px; background: rgba(204,232,117,.2); color: var(--forest); font-size: .82rem; }
 
+    .sync-banner { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 16px; padding: 14px 16px; border: 1px solid rgba(93,143,163,.28); border-radius: 18px; background: rgba(255,253,248,.84); }
+    .sync-banner strong { display: block; margin-bottom: 3px; font-size: .9rem; }
+    .sync-banner span { color: var(--muted); font-size: .76rem; }
+    .exercise-list { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+    .exercise-group { margin: 18px 0 7px; color: var(--forest); font-size: .73rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .exercise-card { padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,253,248,.72); }
+    .exercise-card.done { border-color: rgba(88,167,118,.42); background: rgba(204,232,117,.13); }
+    .exercise-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .exercise-check { width: 24px; height: 24px; flex: 0 0 24px; accent-color: var(--forest); }
+    .exercise-name { min-width: 0; }
+    .exercise-name strong { display: block; font-size: .91rem; }
+    .exercise-name span { color: var(--muted); font-size: .74rem; }
+    .exercise-fields { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+    .exercise-fields label { color: var(--muted); font-size: .66rem; }
+    .exercise-fields input, .exercise-fields select { width: 100%; min-height: 42px; margin-top: 4px; padding: 7px 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--ink); }
+    .session-progress { margin-top: 12px; }
+    .session-progress-head { display: flex; justify-content: space-between; color: var(--muted); font-size: .76rem; }
+    .session-progress-track { height: 8px; margin-top: 7px; overflow: hidden; border-radius: 999px; background: #e9e5dc; }
+    .session-progress-fill { height: 100%; width: 0; border-radius: inherit; background: var(--forest-2); transition: width .2s ease; }
+
     @media (max-width: 900px) {
       .hero { grid-template-columns: 1fr; }
       .progress-orbit { position: absolute; right: -20px; bottom: -30px; opacity: .24; }
@@ -447,8 +470,11 @@
       .app-shell { width: min(100% - 20px, 1180px); padding-top: 12px; padding-bottom: 104px; }
       .topbar { margin-bottom: 16px; }
       .brand-copy span { display: none; }
-      .cloud-status { padding: 8px; }
-      .cloud-status span { display: none; }
+      .cloud-status { min-width: 44px; padding: 8px 11px; }
+      .cloud-status span { display: inline; max-width: 92px; overflow: hidden; text-overflow: ellipsis; }
+      .sync-banner { align-items: stretch; flex-direction: column; }
+      .sync-banner .btn { width: 100%; }
+      .exercise-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .nav {
         position: fixed;
         z-index: 15;
@@ -645,6 +671,10 @@
         <div><h1 id="training-title">Training</h1><p>Leg je sessies kort vast. Het weekdoel telt automatisch mee in je overzicht.</p></div>
         <button type="button" class="btn btn-dark" data-focus-form="training-date">+ Training toevoegen</button>
       </div>
+      <div class="sync-banner" id="sync-banner">
+        <div><strong id="sync-banner-title">Bewaar je training op al je apparaten</strong><span id="sync-banner-copy">Log in om telefoon en computer automatisch gelijk te houden.</span></div>
+        <button type="button" class="btn btn-primary" data-auth-open>Inloggen & synchroniseren</button>
+      </div>
       <div class="form-layout">
         <article class="card sticky-card">
           <div class="card-head"><h3 id="training-form-title">Nieuwe training</h3><span>Sessie</span></div>
@@ -652,10 +682,14 @@
             <input type="hidden" id="training-id">
             <div class="form-grid">
               <div class="field full"><label for="training-date">Datum</label><input id="training-date" type="date" required></div>
-              <div class="field"><label for="training-type">Type</label><select id="training-type" required><option>Push</option><option>Pull</option><option>Benen</option><option>Full body</option><option>Hardlopen</option><option>Overig</option></select></div>
+              <div class="field"><label for="training-type">Training</label><select id="training-type" required><option value="Full Body A – Pull Focus">Full Body A – Pull Focus</option><option value="Full Body B – Lower Focus">Full Body B – Lower Focus</option><option value="Full Body C – Push & Core Focus">Full Body C – Push & Core Focus</option><option>Hardlopen</option><option>Overig</option></select></div>
               <div class="field"><label for="training-duration">Duur (minuten)</label><input id="training-duration" type="number" inputmode="numeric" min="1" max="300" step="1" placeholder="50"></div>
               <div class="field full"><label for="training-rpe">Zwaarte / RPE (1–10)</label><input id="training-rpe" type="range" min="1" max="10" step="1" value="7"><div class="fineprint">Gekozen: <strong id="training-rpe-output">7</strong></div></div>
               <div class="field full"><label for="training-note">Notities (optioneel)</label><textarea id="training-note" placeholder="Belangrijkste oefeningen, gewichten of hoe het ging…"></textarea></div>
+            </div>
+            <div id="training-exercise-section">
+              <div class="session-progress"><div class="session-progress-head"><strong>Oefeningen</strong><span id="exercise-progress-label">0 / 0 afgevinkt</span></div><div class="session-progress-track"><div class="session-progress-fill" id="exercise-progress-fill"></div></div></div>
+              <div class="exercise-list" id="training-exercises"></div>
             </div>
             <div class="form-actions"><button class="btn btn-dark" type="submit">Opslaan</button><button class="btn" id="training-cancel" type="button" hidden>Annuleren</button></div>
           </form>
@@ -811,8 +845,61 @@
       let syncTimer = null;
       let remoteApplying = false;
       const CLOUD_CONFIG = window.VAKANTIEKOMPAS_CONFIG || {};
+      const TRAINING_TEMPLATES = {
+        "Full Body A – Pull Focus": [
+          ["Superset 1", "Deadlift", "3 × 8"], ["Superset 1", "Dumbbell Shoulder Press links", "3 × 6–8"], ["Superset 1", "Dumbbell Shoulder Press rechts", "3 × 6–8"],
+          ["Superset 2", "Bench Press", "3 × 8"], ["Superset 2", "Plank", "3 × 30–60 sec"],
+          ["Superset 3", "Lat Pulldown", "3 × 8"], ["Superset 3", "Triceps Pushdown", "3 × 8"], ["Superset 3", "Cable Lateral Raise", "3 × 12–15"],
+          ["Superset 4", "Face Pull", "3 × 10–12"], ["Superset 4", "Incline Chest Press", "3 × 8"], ["Finisher", "Dumbbell Shrugs", "3 × 12"]
+        ],
+        "Full Body B – Lower Focus": [
+          ["Superset 1", "Romanian Deadlift", "3 × 8"], ["Superset 1", "Walking Lunges", "3 × 10 / been"],
+          ["Superset 2", "Leg Press", "3 × 10"], ["Superset 2", "Standing Calf Raise", "3 × 15"],
+          ["Superset 3", "Bulgarian Split Squat", "3 × 8–10 / been"], ["Superset 3", "Hip Thrust", "3 × 10"],
+          ["Superset 4", "Leg Curl", "3 × 10"], ["Superset 4", "Leg Extension", "3 × 10–12"]
+        ],
+        "Full Body C – Push & Core Focus": [
+          ["Superset 1", "Bench Press", "3 × 8"], ["Superset 1", "Reverse Crunch", "3 × 10"],
+          ["Superset 2", "Incline Dumbbell Press", "3 × 8"], ["Superset 2", "Seated Cable Row", "3 × 8–10"],
+          ["Superset 3", "Dumbbell Lateral Raise", "3 × 12–15"], ["Superset 3", "Overhead Cable Triceps Extension", "3 × 10–12"],
+          ["Superset 4", "Face Pull", "3 × 10–12"], ["Superset 4", "Hanging Leg Raise", "3 sets"]
+        ]
+      };
 
       function clone(value) { return JSON.parse(JSON.stringify(value)); }
+
+      function templateExercises(type) {
+        return (TRAINING_TEMPLATES[type] || []).map((exercise, index) => ({ id: "e" + index, group: exercise[0], name: exercise[1], target: exercise[2], done: false, sets: "", reps: "", weight: "", rating: "", rir: "" }));
+      }
+
+      function renderTrainingExercises(exercises) {
+        const host = document.getElementById("training-exercises");
+        const section = document.getElementById("training-exercise-section");
+        section.hidden = !exercises.length;
+        let lastGroup = "";
+        host.innerHTML = exercises.map((exercise, index) => {
+          const group = exercise.group !== lastGroup ? '<div class="exercise-group">' + escapeHTML(exercise.group) + '</div>' : '';
+          lastGroup = exercise.group;
+          const ratingOptions = '<option value="">–</option>' + Array.from({length: 10}, (_, i) => '<option value="' + (i + 1) + '"' + (String(exercise.rating) === String(i + 1) ? ' selected' : '') + '>' + (i + 1) + '</option>').join("");
+          const rirOptions = '<option value="">–</option>' + Array.from({length: 6}, (_, i) => '<option value="' + i + '"' + (String(exercise.rir) === String(i) ? ' selected' : '') + '>' + i + '</option>').join("");
+          return group + '<div class="exercise-card' + (exercise.done ? ' done' : '') + '" data-exercise-index="' + index + '"><div class="exercise-head"><input class="exercise-check" type="checkbox" data-exercise-field="done"' + (exercise.done ? ' checked' : '') + ' aria-label="' + escapeHTML(exercise.name) + ' afvinken"><div class="exercise-name"><strong>' + escapeHTML(exercise.name) + '</strong><span>Doel: ' + escapeHTML(exercise.target) + '</span></div></div><div class="exercise-fields"><label>Sets<input type="number" inputmode="numeric" min="0" max="20" data-exercise-field="sets" value="' + escapeHTML(exercise.sets ?? "") + '"></label><label>Reps / sec<input type="text" inputmode="numeric" maxlength="20" data-exercise-field="reps" value="' + escapeHTML(exercise.reps ?? "") + '"></label><label>Gewicht kg<input type="number" inputmode="decimal" min="0" max="1000" step="0.5" data-exercise-field="weight" value="' + escapeHTML(exercise.weight ?? "") + '"></label><label>Rating 1–10<select data-exercise-field="rating">' + ratingOptions + '</select></label><label>RIR<select data-exercise-field="rir">' + rirOptions + '</select></label></div></div>';
+        }).join("");
+        updateExerciseProgress();
+      }
+
+      function collectTrainingExercises() {
+        return [...document.querySelectorAll("[data-exercise-index]")].map(card => {
+          const read = field => card.querySelector('[data-exercise-field="' + field + '"]');
+          return { id: "e" + card.dataset.exerciseIndex, group: card.previousElementSibling?.classList.contains("exercise-group") ? card.previousElementSibling.textContent : "", name: card.querySelector(".exercise-name strong").textContent, target: card.querySelector(".exercise-name span").textContent.replace(/^Doel:\s*/, ""), done: read("done").checked, sets: read("sets").value, reps: read("reps").value, weight: read("weight").value, rating: read("rating").value, rir: read("rir").value };
+        }).map((exercise, index, all) => ({ ...exercise, group: exercise.group || all[index - 1]?.group || "Oefeningen" }));
+      }
+
+      function updateExerciseProgress() {
+        const checks = [...document.querySelectorAll('#training-exercises [data-exercise-field="done"]')];
+        const done = checks.filter(input => input.checked).length;
+        document.getElementById("exercise-progress-label").textContent = done + " / " + checks.length + " afgevinkt";
+        document.getElementById("exercise-progress-fill").style.width = (checks.length ? done / checks.length * 100 : 0) + "%";
+      }
 
       function normalizeState(candidate) {
         if (!candidate || !candidate.config || !Array.isArray(candidate.daily) || !Array.isArray(candidate.measurements) || !Array.isArray(candidate.trainings)) return null;
@@ -867,6 +954,15 @@
         document.getElementById("auth-signed-out").hidden = Boolean(currentUser);
         document.getElementById("auth-signed-in").hidden = !currentUser;
         document.getElementById("auth-user-email").textContent = currentUser ? "Ingelogd als " + currentUser.email : "";
+        document.getElementById("sync-banner-title").textContent = currentUser ? "Automatische synchronisatie staat aan" : "Bewaar je training op al je apparaten";
+        document.getElementById("sync-banner-copy").textContent = currentUser ? "Je telefoon en computer worden automatisch gelijk gehouden." : "Log in om telefoon en computer automatisch gelijk te houden.";
+        document.querySelector("#sync-banner [data-auth-open]").textContent = currentUser ? "Synchronisatie bekijken" : "Inloggen & synchroniseren";
+      }
+
+      function openAuthDialog() {
+        updateAuthView();
+        const dialog = document.getElementById("auth-dialog");
+        if (typeof dialog.showModal === "function") dialog.showModal(); else dialog.setAttribute("open", "");
       }
 
       async function initializeCloud() {
@@ -1180,7 +1276,12 @@
         const items = sortByDate(state.trainings).reverse();
         document.getElementById("training-count").textContent = items.length + (items.length === 1 ? " sessie" : " sessies");
         if (!items.length) { host.innerHTML = '<div class="empty-state">Nog geen trainingen geregistreerd.</div>'; return; }
-        host.innerHTML = items.map(item => '<div class="entry-row"><div class="entry-date">' + escapeHTML(formatDate(item.date)) + '</div><div class="entry-main"><strong>' + escapeHTML(item.type) + (item.duration ? " · " + item.duration + " min" : "") + (item.rpe ? " · RPE " + item.rpe : "") + '</strong><span>' + escapeHTML(item.note || "Geen notitie") + '</span></div><div class="entry-actions"><button class="icon-btn" type="button" data-edit-training="' + item.id + '" aria-label="Bewerken">✎</button><button class="icon-btn delete" type="button" data-delete-training="' + item.id + '" aria-label="Verwijderen">×</button></div></div>').join("");
+        host.innerHTML = items.map(item => {
+          const exercises = Array.isArray(item.exercises) ? item.exercises : [];
+          const done = exercises.filter(exercise => exercise.done).length;
+          const exerciseSummary = exercises.length ? done + "/" + exercises.length + " oefeningen afgevinkt" : "Geen oefeningen vastgelegd";
+          return '<div class="entry-row"><div class="entry-date">' + escapeHTML(formatDate(item.date)) + '</div><div class="entry-main"><strong>' + escapeHTML(item.type) + (item.duration ? " · " + item.duration + " min" : "") + (item.rpe ? " · RPE " + item.rpe : "") + '</strong><span>' + escapeHTML(exerciseSummary + (item.note ? " — " + item.note : "")) + '</span></div><div class="entry-actions"><button class="icon-btn" type="button" data-edit-training="' + item.id + '" aria-label="Bewerken">✎</button><button class="icon-btn delete" type="button" data-delete-training="' + item.id + '" aria-label="Verwijderen">×</button></div></div>';
+        }).join("");
       }
 
       function renderNutrition() {
@@ -1265,6 +1366,7 @@
         document.getElementById("training-rpe-output").textContent = "7";
         document.getElementById("training-form-title").textContent = "Nieuwe training";
         document.getElementById("training-cancel").hidden = true;
+        renderTrainingExercises(templateExercises(document.getElementById("training-type").value));
       }
 
       function resetNutritionForm() {
@@ -1315,6 +1417,7 @@
         document.getElementById("training-rpe").value = item.rpe ?? 7;
         document.getElementById("training-rpe-output").textContent = item.rpe ?? 7;
         document.getElementById("training-note").value = item.note || "";
+        renderTrainingExercises(Array.isArray(item.exercises) && item.exercises.length ? item.exercises : templateExercises(item.type));
         document.getElementById("training-form-title").textContent = "Training bewerken";
         document.getElementById("training-cancel").hidden = false;
         document.getElementById("training-date").focus();
@@ -1403,7 +1506,8 @@
           type: document.getElementById("training-type").value,
           duration: number(document.getElementById("training-duration").value),
           rpe: number(document.getElementById("training-rpe").value),
-          note: document.getElementById("training-note").value.trim()
+          note: document.getElementById("training-note").value.trim(),
+          exercises: collectTrainingExercises()
         };
         const index = state.trainings.findIndex(entry => entry.id === item.id);
         if (index >= 0) state.trainings[index] = item; else state.trainings.push(item);
@@ -1458,17 +1562,18 @@
       document.getElementById("nutrition-cancel").addEventListener("click", resetNutritionForm);
       document.getElementById("measurement-metric").addEventListener("change", renderMeasurementChart);
       document.getElementById("training-rpe").addEventListener("input", event => { document.getElementById("training-rpe-output").textContent = event.target.value; });
+      document.getElementById("training-type").addEventListener("change", event => renderTrainingExercises(templateExercises(event.target.value)));
+      document.getElementById("training-exercises").addEventListener("change", event => {
+        if (event.target.matches('[data-exercise-field="done"]')) event.target.closest(".exercise-card").classList.toggle("done", event.target.checked);
+        updateExerciseProgress();
+      });
       document.getElementById("nutrition-day").addEventListener("change", event => {
         resetNutritionForm();
         document.getElementById("nutrition-date").value = event.target.value;
         renderNutrition();
       });
 
-      document.getElementById("cloud-status").addEventListener("click", () => {
-        updateAuthView();
-        const dialog = document.getElementById("auth-dialog");
-        if (typeof dialog.showModal === "function") dialog.showModal(); else dialog.setAttribute("open", "");
-      });
+      document.querySelectorAll("#cloud-status, [data-auth-open]").forEach(button => button.addEventListener("click", openAuthDialog));
       document.getElementById("auth-close").addEventListener("click", () => document.getElementById("auth-dialog").close());
       document.getElementById("auth-form").addEventListener("submit", async event => {
         event.preventDefault();
