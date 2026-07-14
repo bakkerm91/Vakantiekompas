@@ -4,8 +4,7 @@ const APP_SHELL = [
   "./index.html",
   "./config.js",
   "./manifest.webmanifest",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
+  "./icon-source.svg",
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm"
 ];
 
