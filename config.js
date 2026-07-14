@@ -1,0 +1,4 @@
+window.VAKANTIEKOMPAS_CONFIG = {
+  supabaseUrl: "JOUW-SUPABASE-URL",
+  supabaseAnonKey: "JOUW-SUPABASE-PUBLISHABLE-KEY"
+};
