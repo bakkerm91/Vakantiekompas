@@ -2,6 +2,8 @@
 
 Mobiele webapp voor gewicht, omtrek, training en voeding. De app werkt offline, gebruikt e-mailinlog en synchroniseert via Supabase.
 
+Live URL: https://bakkerm91.github.io/Vakantiekompas/
+
 ## 1. Supabase instellen
 
 1. Maak een gratis project op Supabase.
