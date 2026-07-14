@@ -913,6 +913,7 @@
       }
 
       function mergeImportedState(imported) {
+        state.config = { ...state.config, ...imported.config };
         const mergeById = (current, older) => {
           const currentIds = new Set(current.map(item => item.id));
           const currentDates = new Set(current.map(item => item.date));
@@ -1662,7 +1663,7 @@
             if (!imported.config || !Array.isArray(imported.daily) || !Array.isArray(imported.measurements) || !Array.isArray(imported.trainings)) throw new Error("Ongeldig formaat");
             imported.nutrition = Array.isArray(imported.nutrition) ? imported.nutrition : [];
             mergeImportedState(imported);
-            saveState("Back-up samengevoegd; huidige gegevens zijn behouden");
+            saveState("Back-up en trajectinstellingen hersteld");
           } catch (error) {
             showToast("Dit bestand is geen geldige back-up");
           }
