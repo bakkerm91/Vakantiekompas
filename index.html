@@ -912,6 +912,20 @@
         return candidate;
       }
 
+      function mergeImportedState(imported) {
+        const mergeById = (current, older) => {
+          const currentIds = new Set(current.map(item => item.id));
+          const currentDates = new Set(current.map(item => item.date));
+          return current.concat(older.filter(item => !currentIds.has(item.id) && !currentDates.has(item.date)));
+        };
+        state.daily = mergeById(state.daily, imported.daily || []);
+        state.measurements = mergeById(state.measurements, imported.measurements || []);
+        const trainingIds = new Set(state.trainings.map(item => item.id));
+        state.trainings = state.trainings.concat((imported.trainings || []).filter(item => !trainingIds.has(item.id)));
+        const nutritionIds = new Set(state.nutrition.map(item => item.id));
+        state.nutrition = state.nutrition.concat((imported.nutrition || []).filter(item => !nutritionIds.has(item.id)));
+      }
+
       function loadState() {
         try {
           const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -1647,10 +1661,8 @@
             const imported = JSON.parse(reader.result);
             if (!imported.config || !Array.isArray(imported.daily) || !Array.isArray(imported.measurements) || !Array.isArray(imported.trainings)) throw new Error("Ongeldig formaat");
             imported.nutrition = Array.isArray(imported.nutrition) ? imported.nutrition : [];
-            imported.config.calorieTarget = imported.config.calorieTarget ?? 1900;
-            imported.config.carbMax = imported.config.carbMax ?? 30;
-            state = imported;
-            saveState("Back-up geïmporteerd");
+            mergeImportedState(imported);
+            saveState("Back-up samengevoegd; huidige gegevens zijn behouden");
           } catch (error) {
             showToast("Dit bestand is geen geldige back-up");
           }
