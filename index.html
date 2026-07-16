@@ -943,7 +943,9 @@
           ["Superset 1", "Bench Press", "3 × 8"], ["Superset 1", "Reverse Crunch", "3 × 10"],
           ["Superset 2", "Incline Dumbbell Press", "3 × 8"], ["Superset 2", "Seated Cable Row", "3 × 8–10"],
           ["Superset 3", "Dumbbell Lateral Raise", "3 × 12–15"], ["Superset 3", "Overhead Cable Triceps Extension", "3 × 10–12"],
-          ["Superset 4", "Face Pull", "3 × 10–12"], ["Superset 4", "Hanging Leg Raise", "3 sets"]
+          ["Superset 4", "Face Pull", "3 × 10–12"], ["Superset 4", "Hanging Leg Raise", "3 sets"],
+          ["Superset 5 · Core", "Pallof Press", "3 × 10–12 / zijde"], ["Superset 5 · Core", "Dead Bug", "3 × 8–10 / zijde"],
+          ["Toetje · Core", "Plankcircuit", "2–3 rondes: 45 sec voor + 30 sec / zijde"]
         ]
       };
       const FASTING_PLANS = {
@@ -961,6 +963,15 @@
 
       function templateExercises(type) {
         return (TRAINING_TEMPLATES[type] || []).map((exercise, index) => ({ id: "e" + index, group: exercise[0], name: exercise[1], target: exercise[2], done: false, sets: "", reps: "", weight: "", rating: "", rir: "" }));
+      }
+
+      function mergeTemplateExercises(type, savedExercises) {
+        const template = templateExercises(type);
+        if (!Array.isArray(savedExercises) || !savedExercises.length) return template;
+        const savedByName = new Map(savedExercises.filter(item => item.name).map(item => [item.name.toLowerCase(), item]));
+        const merged = template.map(item => ({ ...item, ...(savedByName.get(item.name.toLowerCase()) || {}), group: item.group, target: item.target }));
+        const templateNames = new Set(template.map(item => item.name.toLowerCase()));
+        return merged.concat(savedExercises.filter(item => item.name && !templateNames.has(item.name.toLowerCase())));
       }
 
       function currentTemplateType(type) {
@@ -1655,7 +1666,7 @@
         document.getElementById("training-rpe").value = item.rpe ?? 7;
         document.getElementById("training-rpe-output").textContent = item.rpe ?? 7;
         document.getElementById("training-note").value = item.note || "";
-        renderTrainingExercises(Array.isArray(item.exercises) && item.exercises.length ? item.exercises : templateExercises(displayType));
+        renderTrainingExercises(mergeTemplateExercises(displayType, item.exercises));
         document.getElementById("training-form-title").textContent = "Training bewerken";
         document.getElementById("training-cancel").hidden = false;
         document.getElementById("training-date").focus();
